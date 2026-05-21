@@ -1,131 +1,199 @@
 # OpenRCT2 World Park League
 
+<div align="center">
+
+Turn OpenRCT2 into a living global park economy with rivalry, prestige, market pressure, investments, and endgame competition.
+
 [![CI](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/actions/workflows/ci.yml/badge.svg)](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Release](https://img.shields.io/github/v/release/lia-xim/OpenRCT2-WorldParkLeague)](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/releases)
+[![OpenRCT2](https://img.shields.io/badge/OpenRCT2-Plugin-2f855a)](https://openrct2.io/)
 
-World Park League is an OpenRCT2 plugin that turns a single-park save into a living global park economy.
+[Download Latest Release](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/releases) | [Report a Bug](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/issues/new/choose) | [Balance Feedback](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/issues/new/choose) | [Contributing Guide](./CONTRIBUTING.md)
 
-Instead of growing in isolation, your park competes inside a wider industry with rival parks, shifting people share, prestige races, investments, mergers, spotlight boosts, local rivalries, head-to-head challenges, yearly recaps, and management pressure.
+</div>
 
-## What it adds to OpenRCT2
+> **World Park League** adds the missing meta-game around your park.  
+> You are no longer building in isolation. You are climbing through a global field of rival parks, fighting for people share, reacting to industry events, managing prestige, winning spotlight moments, and dealing with real pressure to stay ahead.
 
-OpenRCT2 already gives you a great park-building sandbox.  
-World Park League adds the missing meta-game around it:
+## Why this exists
 
-- a `50`-park global field that moves every day
-- local rivals you directly fight for people share
-- visible momentum, prestige, rivalry, and ranking pressure
-- boosts, awards, and buzz moments that can swing attention toward your park
-- investments, equity, governance, and long-run management decisions
-- charts, alerts, yearly recaps, and clearer guidance on what matters next
+OpenRCT2 already nails the park-building sandbox.  
+What it often lacks in longer saves is a bigger world reacting to what you do.
 
-The goal is simple: make long-running saves stay interesting much longer.
+World Park League is built to solve that.
 
-## Core features
+It adds:
+
+- a `50`-park living league that updates every day
+- local rivals that compete directly with you for attention
+- prestige, yearly recaps, achievements, and long-term progression
+- a management layer with investments, buybacks, governance, and rewards
+- rivalry pressure that gives late-game parks something meaningful to fight for
+
+The goal is not to replace OpenRCT2.  
+It is to make long-running saves feel alive for much longer.
+
+## Why players install it
+
+This plugin is for you if you want:
+
+- a reason to care about your rank beyond raw money
+- more endgame pressure once your park is already successful
+- rival parks that feel like actual competitors instead of background flavor
+- visible surges, awards, challenges, and story beats
+- a stronger sense that your park exists inside a wider theme park industry
+
+## At a glance
+
+| Area | What it adds |
+| --- | --- |
+| Global competition | 50 simulated parks, daily movement, major world events, mergers, bankruptcies, recoveries, expansion waves |
+| Player pressure | People share, guest-cap pressure, score races, local rivals, spotlight and buzz swings |
+| Management layer | Investments, portfolio tracking, exits, buybacks, governance pressure, management actions |
+| Progression | Prestige goals, achievement rewards, yearly recap, records, trend charts, progress filters |
+| Rival storytelling | primary rivals, watchlist alerts, head-to-head challenges, analyst guidance, league headlines |
+
+## What makes it feel different
+
+Instead of a static overlay, World Park League behaves more like a strategy layer running above your save:
+
+- when you climb, rivals react
+- when you dominate, the pressure gets stronger
+- when you slip, others take your crowd share
+- when you win big, the spotlight can flood your park with attention
+- when a rival catches fire, you feel it immediately
+
+That is the fantasy: not just a better spreadsheet, but a better story.
+
+## Core feature tour
 
 ### Global league
 
-- `50` simulated parks
-- daily ranking movement with larger event cycles
+- `50` simulated parks with different identities and trajectories
 - regional market profiles and world mood shifts
-- mergers, bankruptcies, recoveries, scandals, and expansion arcs
+- daily league movement with larger event cycles layered on top
+- mergers, exits, scandals, recoveries, and industry shakeups
 
-### Player-facing competition
+### Local rivalry
 
-- real player score built from live park data
-- people share and guest-cap pressure tied back into the real save
-- local rival cluster and watchlist alerts
-- direct head-to-head rival challenges
-- spotlight, featured, and buzz systems
+- direct local rivals that mirror your competitive lane
+- head-to-head challenge system with rewards and pressure
+- rivalry tracking in both the main UI and prestige flows
+- alerts when a rival surges, weakens, or becomes vulnerable
 
-### Management layer
+### Management and economy
 
-- investments in other parks
-- dividends, exits, merger carry-over, and portfolio tracking
-- equity offers and buybacks
-- board pressure, governance programs, and management actions
+- invest in other parks and track portfolio performance
+- receive dividends and handle merger carry-over or forced exits
+- manage equity offers, buybacks, and governance pressure
+- use management actions to push for momentum or stability
 
-### Progression layer
+### Progression and prestige
 
-- yearly recap
-- prestige goals
-- achievement rewards
-- lifetime records
-- progress charts and comparison views
+- prestige goals and achievement rewards with real gameplay impact
+- yearly recaps with standout rivals and key moments
+- lifetime records and next-unlock guidance
+- trend charts, filters, and progression visibility
 
-## Why it feels different
+## Install in 30 seconds
 
-World Park League is not just a utility overlay.
-
-It is designed to make the game feel like you are part of a real park industry:
-
-- if you climb, the world reacts
-- if you dominate, pressure increases
-- if you stagnate, rivals pass you
-- if you hit a hot streak, the spotlight can flood your park with attention
-
-It is meant to create story, not just numbers.
-
-## Installation
-
-### From releases
-
-1. Go to the [Releases page](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/releases)
+1. Open the [Releases page](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/releases)
 2. Download the latest standalone plugin file:
 
 ```text
 WorldParkLeague-v<version>.js
 ```
 
-3. Place that file into:
+3. Place it into:
 
 ```text
 Documents/OpenRCT2/plugin
 ```
 
 4. Start OpenRCT2
-5. Open the plugin through the in-game plugin menu
+5. Open `World Park League` from the in-game plugin menu
 
-If you prefer a full archive, each release also includes a ZIP with the plugin file plus `README`, `CHANGELOG`, and `LICENSE`.
+That is the full install.
 
-### Local development install
+If you prefer a bundle, each release also includes a ZIP with:
 
-```powershell
-npm install
-npm run install:plugin
-```
+- `WorldParkLeague.js`
+- `README.md`
+- `CHANGELOG.md`
+- `LICENSE`
 
-This builds the plugin and copies it into your local OpenRCT2 plugin directory.
+## In-game UI
 
-## In-game overview
+The main window is designed around two reading styles:
 
-The main window is built around two modes:
+- `Simple`: easier to scan while playing
+- `Advanced`: deeper management and analysis
 
-- `Simple`: better for normal play and first-time use
-- `Advanced`: better for deeper management and analysis
+The shipped release UI is the real player-facing design.  
+Visible debug controls are intentionally removed from the public release experience.
 
-The release UI intentionally avoids developer-only debug controls. The visible interface is the actual player-facing design.
+## Current release status
+
+The plugin is feature-rich, installable, and publicly releasable today.
+
+The main remaining refinement area is long-run balance, especially:
+
+- top-end snowballing
+- long-hold investment ROI
+- extended real-save validation across small, midgame, and dominant parks
+
+So the foundation is strong, but balancing is still being actively improved.
 
 ## Compatibility
 
 - OpenRCT2 scripting plugin
-- developed and tested with modern OpenRCT2 builds
+- developed and tested against modern OpenRCT2 builds
 - built with Node.js `20+`
 
-If something behaves differently on a specific OpenRCT2 version, please open an issue and mention the exact build.
+If something behaves differently on a specific OpenRCT2 version, please include the exact build when reporting it.
+
+## For players who want to go deeper
+
+See:
+
+- [Balance review](./docs/balance-review.md)
+- [Economy design](./docs/economy-design.md)
+- [Product vision](./docs/product-vision.md)
+- [Requirements tracker](./docs/requirements-tracker.md)
+
+## Contributing
+
+Contributions are very welcome, especially around:
+
+- real-save balancing feedback
+- edge-case and migration testing
+- UI clarity and onboarding
+- alert tuning and signal-to-noise cleanup
+- automated harness improvements
+
+Start here:
+
+- [Contributing guide](./CONTRIBUTING.md)
+- [Code of Conduct](./CODE_OF_CONDUCT.md)
+- [Security policy](./SECURITY.md)
 
 ## Development
 
-### Requirements
+<details>
+<summary><strong>Requirements</strong></summary>
 
 - Node.js `20+`
 - npm
 - OpenRCT2
 
-### Main commands
+</details>
+
+<details>
+<summary><strong>Main commands</strong></summary>
 
 ```powershell
+npm install
 npm run typecheck
 npm run test
 npm run build
@@ -133,7 +201,10 @@ npm run check
 npm run install:plugin
 ```
 
-### Balance and QA commands
+</details>
+
+<details>
+<summary><strong>Balance and QA commands</strong></summary>
 
 ```powershell
 npm run analyze:balance
@@ -141,13 +212,14 @@ npm run analyze:balance:lab
 npm run analyze:balance:release
 ```
 
-What they do:
-
 - `analyze:balance`: reproducible baseline balance report
 - `analyze:balance:lab`: parallel candidate search across major balancing knobs
 - `analyze:balance:release`: longer multi-worker release soak for production-style QA
 
-## Project structure
+</details>
+
+<details>
+<summary><strong>Project structure</strong></summary>
 
 ```text
 docs/
@@ -180,59 +252,21 @@ tests/
   *.test.ts
 ```
 
-## Documentation
-
-- [Balance review](./docs/balance-review.md)
-- [Economy design](./docs/economy-design.md)
-- [Implementation plan](./docs/implementation-plan.md)
-- [Product vision](./docs/product-vision.md)
-- [Requirements tracker](./docs/requirements-tracker.md)
-- [Release checklist](./docs/release-checklist.md)
-
-## Current release state
-
-The project is already feature-rich and publicly releasable, but the biggest remaining long-run work is still balance.
-
-Main follow-up areas:
-
-- top-1 and top-3 stickiness
-- long-hold investment ROI
-- real-save validation across early, midgame, and dominant endgame parks
-- continued UI and onboarding polish
-
-That means the architecture and systems are strong, but balancing is still actively being refined.
-
-## Contributing
-
-Contributions are very welcome.
-
-Useful areas right now:
-
-- real-save balancing feedback
-- migration and edge-case testing
-- UI clarity and onboarding improvements
-- alert tuning and signal-to-noise cleanup
-- additional automated harness coverage
-
-Start here:
-
-- [Contributing guide](./CONTRIBUTING.md)
-- [Code of Conduct](./CODE_OF_CONDUCT.md)
-- [Security policy](./SECURITY.md)
+</details>
 
 ## Reporting issues
 
-Please use the GitHub issue templates when possible:
+Please use the GitHub templates when possible:
 
 - bug report
 - feature request
 - balance report
 
-Balance reports are especially valuable for this project, because many important problems only show up over longer saves.
+Balance reports are especially useful for this project because many of the most important issues only appear over longer saves.
 
 ## Open source readiness
 
-The repository includes:
+This repository includes:
 
 - MIT license
 - changelog
@@ -249,11 +283,11 @@ The repository includes:
 
 Near-term priorities:
 
-- keep reducing top-end snowballing
+- continue reducing top-end snowballing
 - further tune long-term investment returns
 - expand real-save QA coverage
 - keep improving player guidance and readability
 
 ## Credits
 
-Built for OpenRCT2 and heavily inspired by the kind of industry-pressure storytelling that games like Game Dev Tycoon create so well.
+Built for OpenRCT2 and inspired by the kind of industry-pressure storytelling that management games like Game Dev Tycoon do so well.
