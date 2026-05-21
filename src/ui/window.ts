@@ -40,12 +40,7 @@ import {
 import {
   buyInvestmentForRival,
   readState,
-  resetState,
-  runManualSimulation,
   sellInvestmentForRival,
-  triggerDebugBreakoutBoost,
-  triggerDebugFeaturedBoost,
-  triggerDebugSpotlight,
   toggleWatchlistRivalById,
 } from "../state/repository";
 import {
@@ -224,7 +219,7 @@ export function openMainWindow(): void {
           name: "league-card",
           x: 498,
           y: 34,
-          width: 280,
+          width: 360,
           height: 78,
           onDraw(g) {
             drawStatCard(this, g, leagueSummaryCard);
@@ -233,10 +228,10 @@ export function openMainWindow(): void {
         {
           type: "button",
           name: "capital-desk",
-          x: 786,
+          x: 868,
           y: 34,
-          width: 84,
-          height: 16,
+          width: 94,
+          height: 18,
           text: "Management",
           onClick: () => {
             runWindowAction("capital-desk.click", () => openCapitalDeskWindow());
@@ -245,10 +240,10 @@ export function openMainWindow(): void {
         {
           type: "button",
           name: "watchlist-window",
-          x: 878,
-          y: 34,
-          width: 84,
-          height: 16,
+          x: 868,
+          y: 58,
+          width: 94,
+          height: 18,
           text: "Watchlist",
           onClick: () => {
             runWindowAction("watchlist-window.click", () => openWatchlistWindow());
@@ -257,73 +252,13 @@ export function openMainWindow(): void {
         {
           type: "button",
           name: "prestige-window",
-          x: 878,
-          y: 54,
-          width: 84,
-          height: 16,
+          x: 868,
+          y: 82,
+          width: 94,
+          height: 18,
           text: "Prestige",
           onClick: () => {
             runWindowAction("prestige-window.click", () => openPrestigeWindow());
-          },
-        },
-        {
-          type: "button",
-          name: "debug-sim-month",
-          x: 786,
-          y: 54,
-          width: 84,
-          height: 16,
-          text: "+1 Month",
-          onClick: () => {
-            runWindowAction("debug-sim-month.click", () => handleDebugAction("simulate"));
-          },
-        },
-        {
-          type: "button",
-          name: "debug-reset",
-          x: 878,
-          y: 74,
-          width: 84,
-          height: 16,
-          text: "Debug Reset",
-          onClick: () => {
-            runWindowAction("debug-reset.click", () => handleDebugAction("reset"));
-          },
-        },
-        {
-          type: "button",
-          name: "debug-spotlight",
-          x: 786,
-          y: 74,
-          width: 84,
-          height: 16,
-          text: "Spotlight",
-          onClick: () => {
-            runWindowAction("debug-spotlight.click", () => handleDebugAction("spotlight"));
-          },
-        },
-        {
-          type: "button",
-          name: "debug-featured",
-          x: 786,
-          y: 94,
-          width: 84,
-          height: 16,
-          text: "Featured",
-          onClick: () => {
-            runWindowAction("debug-featured.click", () => handleDebugAction("featured"));
-          },
-        },
-        {
-          type: "button",
-          name: "debug-breakout",
-          x: 878,
-          y: 94,
-          width: 84,
-          height: 16,
-          text: "Buzz",
-          onClick: () => {
-            runWindowAction("debug-breakout.click", () => handleDebugAction("breakout"));
           },
         },
 
@@ -1433,58 +1368,6 @@ function handleWatchToggle(): void {
   refreshWatchlistWindow();
 }
 
-function handleDebugAction(
-  mode: "simulate" | "reset" | "spotlight" | "featured" | "breakout"
-): void {
-  if (typeof ui === "undefined") {
-    return;
-  }
-
-  const snapshot = readPlayerSnapshot();
-  if (mode === "spotlight") {
-    const result = triggerDebugSpotlight(snapshot);
-    park.postMessage(`[World Park League] ${result.message}`);
-    updateWindowContents(result.state, readPlayerSnapshot());
-    refreshCapitalDeskWindow();
-    refreshWatchlistWindow();
-    return;
-  }
-
-  if (mode === "featured") {
-    const result = triggerDebugFeaturedBoost(snapshot);
-    park.postMessage(`[World Park League] ${result.message}`);
-    updateWindowContents(result.state, readPlayerSnapshot());
-    refreshCapitalDeskWindow();
-    refreshWatchlistWindow();
-    return;
-  }
-
-  if (mode === "breakout") {
-    const result = triggerDebugBreakoutBoost(snapshot);
-    park.postMessage(`[World Park League] ${result.message}`);
-    updateWindowContents(result.state, readPlayerSnapshot());
-    refreshCapitalDeskWindow();
-    refreshWatchlistWindow();
-    return;
-  }
-
-  if (mode === "simulate") {
-    const result = runManualSimulation(snapshot);
-    park.postMessage(`[World Park League] Debug simulation advanced to month ${result.month}.`);
-    updateWindowContents(result.nextState, readPlayerSnapshot());
-    refreshCapitalDeskWindow();
-    refreshWatchlistWindow();
-    return;
-  }
-
-  const freshState = resetState(snapshot);
-  selectedParkId = PLAYER_PARK_ID;
-  park.postMessage("[World Park League] Debug reset cleared the league state.");
-  updateWindowContents(freshState, readPlayerSnapshot());
-  refreshCapitalDeskWindow();
-  refreshWatchlistWindow();
-}
-
 function buildPlayerDetailLines(
   state: WorldParkLeagueState,
   snapshot: PlayerSnapshot,
@@ -2178,33 +2061,21 @@ function buildSpotlightBannerText(state: WorldParkLeagueState): string {
     state.world.spotlightMonthsRemaining > 0 &&
     state.world.spotlightParkId === PLAYER_PARK_ID
   ) {
-    const debugTag =
-      state.world.spotlightDebugOverrideDaysRemaining > 0
-        ? ` | DEBUG LOCK ${state.world.spotlightDebugOverrideDaysRemaining}D`
-        : "";
     return `{YELLOW}HURRAY! ${SPOTLIGHT_TITLE.toUpperCase()} ACTIVE | YOU ARE THE BEST PARK OF THE MONTH | X${Math.round(
       state.world.spotlightGuestMultiplier || SPOTLIGHT_GUEST_MULTIPLIER
-    )} GUEST SURGE LIVE${debugTag}`;
+    )} GUEST SURGE LIVE`;
   }
 
   if (state.world.featuredDaysRemaining > 0 && state.world.featuredParkId === PLAYER_PARK_ID) {
-    const debugTag =
-      state.world.featuredDebugOverrideDaysRemaining > 0
-        ? ` | DEBUG LOCK ${state.world.featuredDebugOverrideDaysRemaining}D`
-        : "";
     return `{GREEN}${FEATURED_TITLE.toUpperCase()} ACTIVE | YOUR PARK GOT THE WEEKLY FEATURE PUSH | X${(
       state.world.featuredGuestMultiplier || 1
-    ).toFixed(2)} VISIBILITY BOOST LIVE${debugTag}`;
+    ).toFixed(2)} VISIBILITY BOOST LIVE`;
   }
 
   if (state.world.breakoutDaysRemaining > 0 && state.world.breakoutParkId === PLAYER_PARK_ID) {
-    const debugTag =
-      state.world.breakoutDebugOverrideDaysRemaining > 0
-        ? ` | DEBUG LOCK ${state.world.breakoutDebugOverrideDaysRemaining}D`
-        : "";
     return `{GREEN}${BREAKOUT_TITLE.toUpperCase()} ACTIVE | YOUR PARK CAUGHT A MID-TABLE BUZZ WAVE | X${(
       state.world.breakoutGuestMultiplier || 1
-    ).toFixed(2)} ATTENTION BOOST LIVE${debugTag}`;
+    ).toFixed(2)} ATTENTION BOOST LIVE`;
   }
 
   return "";
