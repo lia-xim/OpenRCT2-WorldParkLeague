@@ -1,0 +1,45 @@
+name: Balance report
+description: Report snowballing, weak systems, overpowered loops, or pacing issues.
+title: "[Balance] "
+labels:
+  - balance
+body:
+  - type: dropdown
+    id: save_phase
+    attributes:
+      label: Save phase
+      options:
+        - Early game
+        - Midgame
+        - Endgame
+        - Very long sandbox
+    validations:
+      required: true
+  - type: textarea
+    id: observation
+    attributes:
+      label: What happened?
+      description: Describe the balance issue as clearly as possible.
+    validations:
+      required: true
+  - type: textarea
+    id: expectation
+    attributes:
+      label: What did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Useful numbers
+      description: Rank, score, people share, profit, value, boosts, prestige, ROI, or anything else you noticed.
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Can you reproduce it?
+      description: If yes, explain how.
+  - type: textarea
+    id: files
+    attributes:
+      label: Save file, screenshots, or clips
+      description: Link or describe anything that helps.

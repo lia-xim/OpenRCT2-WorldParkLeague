@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest a new system, improvement, or UX idea.
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem or gap are you trying to solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: gameplay
+    attributes:
+      label: Gameplay impact
+      description: How should this change the player experience?
+  - type: textarea
+    id: references
+    attributes:
+      label: References or inspiration
+      description: Other games, screenshots, mockups, or related systems.

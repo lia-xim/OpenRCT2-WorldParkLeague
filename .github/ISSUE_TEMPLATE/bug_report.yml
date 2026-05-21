@@ -1,0 +1,60 @@
+name: Bug report
+description: Report a bug, crash, broken flow, or save-related issue.
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is broken?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Please provide a clear reproduction path.
+      placeholder: |
+        1. Open save ...
+        2. Open World Park League ...
+        3. Click ...
+        4. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: plugin_version
+    attributes:
+      label: Plugin version
+      placeholder: "0.20.0"
+  - type: input
+    id: openrct2_version
+    attributes:
+      label: OpenRCT2 version
+  - type: dropdown
+    id: park_phase
+    attributes:
+      label: Park phase
+      options:
+        - Early game
+        - Midgame
+        - Endgame
+        - Not sure
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, crash output, or screenshots
+      description: Paste anything useful here.
