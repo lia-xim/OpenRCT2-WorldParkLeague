@@ -1,7 +1,7 @@
 import type { SimulationConfig } from "./types";
 
 export const PLUGIN_NAME = "World Park League";
-export const PLUGIN_VERSION = "0.20.0";
+export const PLUGIN_VERSION = "0.20.1";
 export const TARGET_API_VERSION = 81;
 export const STORAGE_KEY = "worldParkLeague.state";
 export const WINDOW_CLASSIFICATION = "world-park-league.main";

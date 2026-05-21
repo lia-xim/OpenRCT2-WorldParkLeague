@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.20.1
+
+- Added a standalone release-ready plugin asset so end users can download a single `.js` file and drop it straight into `Documents/OpenRCT2/plugin`.
+- Improved the public README and release documentation for a cleaner open-source installation and contribution flow.
+- Removed visible debug controls from the shipped in-game UI so the release build reflects the actual player-facing design.
+
 ## 0.20.0
 
 - Added direct head-to-head rival challenges with real cash, boost, and temporary reward-program payouts.

@@ -72,8 +72,13 @@ It is meant to create story, not just numbers.
 ### From releases
 
 1. Go to the [Releases page](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/releases)
-2. Download the latest `WorldParkLeague.js` release package
-3. Place the plugin file into:
+2. Download the latest standalone plugin file:
+
+```text
+WorldParkLeague-v<version>.js
+```
+
+3. Place that file into:
 
 ```text
 Documents/OpenRCT2/plugin
@@ -81,6 +86,8 @@ Documents/OpenRCT2/plugin
 
 4. Start OpenRCT2
 5. Open the plugin through the in-game plugin menu
+
+If you prefer a full archive, each release also includes a ZIP with the plugin file plus `README`, `CHANGELOG`, and `LICENSE`.
 
 ### Local development install
 

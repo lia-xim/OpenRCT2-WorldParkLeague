@@ -8,6 +8,11 @@
 
 World Park League turns OpenRCT2 into a living global park economy with rival rankings, market share, investments, prestige goals, rivalry challenges, spotlight boosts, watchlists, and endgame pressure.
 
+Primary install asset:
+
+- download the standalone `WorldParkLeague-v<version>.js`
+- place it into `Documents/OpenRCT2/plugin`
+
 ## Suggested highlights
 
 - `50`-park global league with daily movement and bigger event cycles
@@ -32,6 +37,11 @@ World Park League turns OpenRCT2 into a living global park economy with rival ra
 - automated balance analysis verified
 - parallel balance-lab verified
 - release-soak workflow verified
+
+### Installation
+
+Download `WorldParkLeague-v<version>.js` from this release and place it directly into `Documents/OpenRCT2/plugin`.
+The ZIP is included as a secondary convenience bundle with docs and license files.
 
 ### Known follow-up areas
 

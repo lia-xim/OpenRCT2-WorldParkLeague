@@ -12,11 +12,17 @@
 
 Check the generated files in `release/`:
 
+- `WorldParkLeague-v<version>.js`
+- `WorldParkLeague-v<version>.js.sha256`
 - `WorldParkLeague-v<version>.zip`
 - `WorldParkLeague-v<version>.zip.sha256`
 - staging folder `WorldParkLeague-v<version>/`
 
-The ZIP should contain:
+Primary end-user asset:
+
+- `WorldParkLeague-v<version>.js`
+
+The ZIP should contain the same plugin file plus documentation:
 
 - `WorldParkLeague.js`
 - `README.md`
@@ -25,28 +31,23 @@ The ZIP should contain:
 
 ## GitHub publication
 
-This workspace currently has no configured Git remote and no direct repository-creation flow.
-
-Manual steps:
-
-1. Create a new public GitHub repository.
-2. Add the remote locally:
-   `git remote add origin <your-repo-url>`
-3. Push the branch:
-   `git push -u origin main`
-4. Create a GitHub release tagged `v<version>`.
-5. Upload:
+1. Push the current branch to GitHub.
+2. Create a GitHub release tagged `v<version>`.
+3. Upload:
+   - `release/WorldParkLeague-v<version>.js`
+   - `release/WorldParkLeague-v<version>.js.sha256`
    - `release/WorldParkLeague-v<version>.zip`
    - `release/WorldParkLeague-v<version>.zip.sha256`
-6. Use the prepared release text in `docs/github-release-template.md`.
-7. Add at least three screenshots:
+4. Mark the standalone `.js` file as the primary install download in the release body.
+5. Use the prepared release text in `docs/github-release-template.md`.
+6. Add at least three screenshots:
    - small / early park view
    - midgame league board / chart / alerts
    - prestige or capital desk / rivalry view
 
 ## Post-release smoke test
 
-1. Install the packaged `WorldParkLeague.js` in OpenRCT2.
+1. Install the released standalone `.js` file in OpenRCT2.
 2. Open a small park, a midgame park, and a dominant endgame save.
 3. Verify:
    - main window opens cleanly
