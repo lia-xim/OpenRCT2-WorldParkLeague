@@ -1,0 +1,24 @@
+{
+  "name": "openrct2-world-park-league",
+  "version": "0.20.0",
+  "private": true,
+  "description": "Global competitor economy plugin for OpenRCT2.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "analyze:balance": "node scripts/analyze-balance.mjs",
+    "analyze:balance:lab": "node scripts/analyze-balance-lab.mjs",
+    "analyze:balance:release": "node scripts/analyze-balance-release.mjs",
+    "check": "npm run typecheck && npm run test && npm run build",
+    "install:plugin": "npm run build && powershell -ExecutionPolicy Bypass -File scripts/install-plugin.ps1",
+    "release:package": "node scripts/release-package.mjs"
+  },
+  "devDependencies": {
+    "@openrct2/types": "^0.5.1",
+    "@types/node": "^25.9.1",
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
+  }
+}
