@@ -1,3 +1,4 @@
+import { formatMoney } from "./currency";
 import { clamp } from "./math";
 import type {
   PlayerLeagueActionProgram,
@@ -221,10 +222,6 @@ export function getPlayerActionSummary(state: WorldParkLeagueState): string {
   return actions
     .map((action) => `${action.title} ${action.daysRemaining}d`)
     .join(" | ");
-}
-
-function formatMoney(value: number): string {
-  return `$${Math.round(value).toLocaleString("en-US")}`;
 }
 
 function getActionImpactLabel(definition: ActionDefinition): string {

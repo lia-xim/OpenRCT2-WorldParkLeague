@@ -1,6 +1,6 @@
 {
   "name": "openrct2-world-park-league",
-  "version": "0.20.1",
+  "version": "0.20.2",
   "private": true,
   "description": "Global competitor economy plugin for OpenRCT2.",
   "scripts": {

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.20.2
+
+- Switched the plugin away from hardcoded dollar UI strings toward the OpenRCT2 money formatter, so the in-game currency follows the player's actual game settings more closely.
+- Added and updated planning docs for the next `Owner Finance` / single-investment-system architecture.
+- Continued polishing public-facing docs and release prep for the current release branch.
+
 ## 0.20.1
 
 - Added a standalone release-ready plugin asset so end users can download a single `.js` file and drop it straight into `Documents/OpenRCT2/plugin`.

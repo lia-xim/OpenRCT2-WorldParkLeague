@@ -1,4 +1,5 @@
 import { estimateBuybackPrice, getAvailableOutsideOwnershipForGovernance } from "./equity";
+import { formatMoney } from "./currency";
 import { clamp, deepClone, roundTo } from "./math";
 import { hashString } from "./random";
 import type {
@@ -778,20 +779,9 @@ function failure(state: WorldParkLeagueState, message: string): GovernancePropos
   };
 }
 
-function formatMoney(value: number): string {
-  return `$${Math.round(value).toLocaleString("en-US")}`;
-}
-
 function formatCompactSignedMoney(value: number): string {
-  const absValue = Math.abs(value);
-  const prefix = value >= 0 ? "+" : "-";
-  if (absValue >= 1_000_000) {
-    return `${prefix}$${(absValue / 1_000_000).toFixed(1)}m`;
-  }
-  if (absValue >= 1_000) {
-    return `${prefix}$${(absValue / 1_000).toFixed(0)}k`;
-  }
-  return `${prefix}$${Math.round(absValue)}`;
+  const formatted = formatMoney(value);
+  return value > 0 ? `+${formatted}` : formatted;
 }
 
 function trimText(value: string, maxLength: number): string {

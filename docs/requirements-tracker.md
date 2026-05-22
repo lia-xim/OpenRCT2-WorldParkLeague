@@ -18,6 +18,7 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] OpenRCT2 soll sich wie Teil einer groesseren internationalen Parkbranche anfuehlen
 - [x] Konkurrenzparks sollen wirtschaftlich simuliert werden, ohne begehbare Fremdparks zu brauchen
 - [x] Das Endgame soll durch Konkurrenz, Marktanteile und Prestige spannend bleiben
+- [ ] Der Spieler soll neben der Parkkasse auch eine eigene Eigentuemer-/Privatfinanzebene bekommen
 - [x] Das System soll sauber, modular und produktionsnah aufgebaut sein
 - [x] Das System soll eine lebende Dokumentation und einen nachvollziehbaren Umsetzungsstand haben
 
@@ -71,6 +72,14 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Beteiligungen mit hoeherer strategischer Tiefe
 - [x] Beteiligungen mit echter Einflussmechanik auf Events, Synergien oder Zugang zu Boni
 - [-] Investment-ROI ueber lange Laeufe weiter entschlacken
+- [ ] Getrennte Eigentuemer-Finanzen statt nur Parkkasse als Handelsbasis
+- [ ] Persoenliches Cash, Net Worth und persoenliche Dividendenertraege
+- [ ] Gehalt / Board-Salary als regelmaessiger Eigentuemer-Zufluss
+- [ ] Vereinfachter Rivalen-Aktienmarkt mit persoenlichen Kauf-/Verkaufsentscheidungen
+- [x] Architekturentscheidung getroffen: kein zweites paralleles Investment-System, sondern Migration des bestehenden Systems auf Owner Holdings
+- [ ] Owner-Portfolio-Ansicht mit persoenlichem Cash, Gehalt, Holdings und Net Worth
+- [ ] Margin Buying nur als spaetere Erweiterung nach stabilem Basis-Markt
+- [ ] Short Selling nur als sehr spaete optionale Erweiterung wegen hoher Regel- und QA-Komplexitaet
 
 ## Rivalen- und Welt-Events
 
@@ -128,6 +137,8 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] `Head-to-head`-Hauptrivale mit klarer Gap-/Momentum-Zusammenfassung direkt im UI
 - [x] Analyst-/Press-Layer mit verstaendlicher Begruendung, warum du stehst oder faellst
 - [x] Direkte Rivalen-Challenges mit sichtbarer Reward-/Status-Zusammenfassung
+- [ ] Eigener `Owner / Market`-Bereich oder Tab fuer persoenliche Finanzen und persoenliche Holdings
+- [ ] Klare Erklaerung im UI, welche Mittel der Parkkasse gehoeren und welche dem Eigentuemer
 
 ## Technische und Architektur-Anforderungen
 
@@ -170,6 +181,8 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Prestige-/Achievement-Layer mit eigener UI und persistenten Rekorden einziehen
 - [x] Head-to-head-Rivalitaet und Analystenfuehrung fuer bessere Lesbarkeit und mehr Story einziehen
 - [x] Release-Soak und wirtschaftliche Reward-/Investment-Hebel in den Balance-Lab-Workflow einziehen
+- [ ] Naechste groessere Systemwelle als vereinfachte Eigentuemer-/Stock-Market-Ebene vorbereiten
+- [ ] Scope fuer persoenliche Finanzen bewusst klein halten und erst spaeter um Margin/Shorting erweitern
 
 ## Naechste Umsetzungsschritte
 
@@ -177,6 +190,11 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 2. Investment-Balancing ueber echte Spielsituationen pruefen, vor allem ROI ueber mehrere Jahre
 3. Kapitalmassnahmen und Board-Votes ueber echte Saves feinjustieren
 4. Watchlist/Alerts ueber echte Savegames auf Signal-zu-Rauschen und Alert-Haeufigkeit feinjustieren
-5. Weitere Diagnoseansichten fuer Score-, Markt- und Event-Ursachen ausbauen
-6. GitHub-Release mit Screenshots, Beschreibung und Paket-Artefakten veroeffentlichen
-7. Anforderungen und Tracker nach jeder Feature-Welle aktualisieren
+5. `Owner Finance` spezifizieren: persoenliches Cash, Salary, Net Worth und eigene Holdings
+6. Vereinfachten Rivalen-Aktienmarkt fuer persoenliche Kauf-/Verkaufsentscheidungen planen
+7. Bestehende Investment-Logik auf Owner Holdings migrieren und Park-/Owner-Cashflows sauber trennen
+8. Erst danach pruefen, ob Margin Buying als kontrollierte Erweiterung genug Mehrwert bringt
+9. Short Selling nur als spaete optionale Erweiterung behandeln, nicht als naechsten Kernschritt
+10. Weitere Diagnoseansichten fuer Score-, Markt- und Event-Ursachen ausbauen
+11. GitHub-Release mit Screenshots, Beschreibung und Paket-Artefakten veroeffentlichen
+12. Anforderungen und Tracker nach jeder Feature-Welle aktualisieren

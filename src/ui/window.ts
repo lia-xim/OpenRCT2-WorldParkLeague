@@ -29,6 +29,11 @@ import {
   getHistorySeries,
   summarizeHistoryMetric,
 } from "../domain/history";
+import {
+  formatCompactMoney as formatGameCompactMoney,
+  formatMoney as formatGameMoney,
+  formatSignedMoney as formatGameSignedMoney,
+} from "../domain/currency";
 import { clamp } from "../domain/math";
 import { getArchetypeLabel, getStrategyLabel } from "../domain/rivals";
 import {
@@ -1988,15 +1993,7 @@ function formatCompactCount(value: number): string {
 }
 
 function formatCompactMoney(value: number): string {
-  const absValue = Math.abs(value);
-  const prefix = value < 0 ? "-" : "";
-  if (absValue >= 1_000_000) {
-    return `${prefix}$${(absValue / 1_000_000).toFixed(1)}m`;
-  }
-  if (absValue >= 1_000) {
-    return `${prefix}$${(absValue / 1_000).toFixed(0)}k`;
-  }
-  return `${prefix}$${Math.round(absValue)}`;
+  return formatGameCompactMoney(value);
 }
 
 function formatCompactDelta(value: number): string {
@@ -2008,12 +2005,12 @@ function formatCompactDelta(value: number): string {
 }
 
 function formatMoney(value: number): string {
-  return `$${Math.round(value).toLocaleString("en-US")}`;
+  return formatGameMoney(value);
 }
 
 function formatSignedMoney(value: number): string {
-  const prefix = value >= 0 ? "+" : "-";
-  return decorateDirectionalValue(value, `${prefix}${formatMoney(Math.abs(value))}`);
+  const formatted = value > 0 ? `+${formatGameSignedMoney(value)}` : formatGameSignedMoney(value);
+  return decorateDirectionalValue(value, formatted);
 }
 
 function formatSignedCompactMoney(value: number): string {

@@ -1,4 +1,5 @@
 import { PLAYER_PARK_ID, SUPPORTING_BOOST_DURATION_DAYS } from "../config";
+import { formatMoney } from "./currency";
 import { calculatePlayerScoreBreakdown } from "./player";
 import { getLocalMarketSummary, isFocusRival, isWatchedRival } from "./watchlist";
 import type {
@@ -543,8 +544,4 @@ function describeChallengeReward(challenge: PlayerRivalChallenge): string {
 
 function remainingChallengeDays(challenge: PlayerRivalChallenge, currentDayIndex: number): number {
   return Math.max(0, challenge.resolveAtDayIndex - currentDayIndex);
-}
-
-function formatMoney(value: number): string {
-  return `$${Math.round(value).toLocaleString("en-US")}`;
 }

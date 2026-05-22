@@ -237,6 +237,47 @@ Status:
 
 - erste produktionsfaehige Version umgesetzt
 
+## Phase 8: Owner Finance und vereinfachter Stock Market
+
+Aufgaben:
+
+- persoenliche Eigentuemer-Finanzen getrennt von der Parkkasse einfuehren
+- monatliches Gehalt / Board-Salary fuer den Spieler definieren
+- persoenliches Cash, persoenliches Net Worth und persoenliche Holdings modellieren
+- einfachen Rivalen-Aktienmarkt aufsetzen, der auf bereits vorhandenen Rivalenwerten basiert
+- UI fuer `Owner / Market` mit persoenlichem Portfolio und persoenlichen Kauf-/Verkaufsaktionen bauen
+- bestehende Investments per Migration zu Owner Holdings umdeuten statt ein zweites Portfolio-System aufzubauen
+
+Definition of done:
+
+- der Spieler hat eine nachvollziehbare Eigentuemer-Ebene neben der Parkkasse
+- persoenliche Investitionen fuehlen sich wie ein eigenes Meta-Game an
+- Salary, Dividenden und persoenliche Holdings sind fuer den Spieler klar lesbar
+- es existiert nur ein Rivalen-Investment-System, nicht zwei parallele Portfolios
+
+Status:
+
+- noch offen
+- fachlich vorbereitet, weil Rivalenwerte, Board-/Equity-Logik und bestehende Beteiligungsmodelle schon existieren
+- Architekturentscheidung dokumentiert in `docs/owner-finance-design.md`
+
+## Phase 9: Advanced Brokerage (optional / spaeter)
+
+Aufgaben:
+
+- Margin Buying nur dann einfuehren, wenn der Basismarkt stabil und gut erklaert ist
+- Short Selling nur mit klaren Regeln fuer Merger, Bankrotte, Delistings und Margin Calls pruefen
+- Maintenance-Margin, Borrow-Fee und Forced Closeouts modellieren
+
+Definition of done:
+
+- komplexere Handelsmechaniken fuehlen sich nicht unfair oder unlesbar an
+
+Status:
+
+- bewusst nicht Teil des naechsten Kernscopes
+- nur als spaete Ausbauphase vorgesehen
+
 ## Technische Risiken
 
 - Guest-Cap-Eingriff darf das Basisspiel nicht unlesbar machen
@@ -249,14 +290,16 @@ Status:
 
 1. Investment-Ertraege, Cashflow und Snowballing gegen echte Parks balancieren
 2. Investor- und Board-Mechaniken ueber echte Saves und Balancing-Runden feinjustieren
-3. Teilverkaeufe und mehrere Kaufgroessen ergaenzen
-4. Score-, Markt- und Event-Diagnostik im UI weiter vertiefen
-5. Groessere Ingame-Testlaeufe und Formelfeinjustierung durchfuehren
-6. Spaetere Meta-Systeme wie Einflussrechte oder Synergien vorbereiten
+3. Owner-Finance-Scope sauber schneiden: persoenliches Cash, Salary, Net Worth und Holdings
+4. Bestehende Treasury-Investments gegen spaetere persoenliche Holdings abgrenzen
+5. Einfachen Rivalen-Aktienmarkt ohne Margin/Shorting konzipieren
+6. Score-, Markt- und Event-Diagnostik im UI weiter vertiefen
+7. Groessere Ingame-Testlaeufe und Formelfeinjustierung durchfuehren
+8. Spaetere Meta-Systeme wie Einflussrechte oder Synergien vorbereiten
 
 ## Entscheidung fuer den Start
 
-Wir beginnen bewusst nicht mit Investoren-Boards, Aktienkursen oder komplexen Abstimmungen.
+Wir beginnen bewusst nicht mit Margin Buying, Short Selling oder einem vollwertigen Orderbuch.
 
 Wir beginnen mit dem Kern:
 
@@ -265,5 +308,12 @@ Wir beginnen mit dem Kern:
 - News
 - Besucherwirkung
 - Catch-up
+
+Der naechste logische Ausbau ist deshalb nicht maximale Finanzkomplexitaet, sondern:
+
+- persoenliche Finanzen
+- Salary / Eigentuemer-Ebene
+- einfacher Rivalen-Aktienmarkt
+- klares Owner-Portfolio
 
 Wenn dieser Kern funktioniert, kann der Rest organisch darauf wachsen.

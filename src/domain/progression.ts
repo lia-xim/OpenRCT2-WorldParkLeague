@@ -1,4 +1,5 @@
 import { DAYS_PER_MONTH, PLAYER_PARK_ID, SEASON_FACTORS } from "../config";
+import { formatMoney } from "./currency";
 import type { LeaderboardEntry, ParkHistoryPoint, PlayerSnapshot, WorldParkLeagueState } from "../types";
 import type { LocalMarketSummary } from "./watchlist";
 
@@ -305,6 +306,6 @@ function formatSignedNumber(value: number): string {
 }
 
 function formatSignedMoney(value: number): string {
-  const rounded = Math.round(Math.abs(value)).toLocaleString("en-US");
-  return `${value >= 0 ? "+" : "-"}$${rounded}`;
+  const formatted = formatMoney(value);
+  return value > 0 ? `+${formatted}` : formatted;
 }

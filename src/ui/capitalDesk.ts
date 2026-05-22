@@ -19,6 +19,7 @@ import {
   startLeagueAction,
 } from "../state/repository";
 import { PLUGIN_NAME } from "../config";
+import { formatCompactMoney, formatMoney } from "../domain/currency";
 import {
   getActionDefinition,
   getActionDefinitionRows,
@@ -586,20 +587,4 @@ function buildActionHint(
     : `Ready to launch for ${formatMoney(definition.upfrontCost)}.`;
 
   return `${definition.title}: ${definition.story} ${definition.bestUse} ${stateText}`;
-}
-
-function formatMoney(value: number): string {
-  return `$${Math.round(value).toLocaleString("en-US")}`;
-}
-
-function formatCompactMoney(value: number): string {
-  const absValue = Math.abs(value);
-  const prefix = value < 0 ? "-" : "";
-  if (absValue >= 1_000_000) {
-    return `${prefix}$${(absValue / 1_000_000).toFixed(1)}m`;
-  }
-  if (absValue >= 1_000) {
-    return `${prefix}$${(absValue / 1_000).toFixed(0)}k`;
-  }
-  return `${prefix}$${Math.round(absValue)}`;
 }

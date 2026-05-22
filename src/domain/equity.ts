@@ -1,3 +1,4 @@
+import { formatMoney } from "./currency";
 import { clamp, deepClone, roundTo } from "./math";
 import { createScopedRng, hashString } from "./random";
 import type {
@@ -407,10 +408,6 @@ function createNews(
     headline,
     detail,
   };
-}
-
-function formatMoney(value: number): string {
-  return `$${Math.round(value).toLocaleString("en-US")}`;
 }
 
 function trimName(value: string, maxLength: number): string {

@@ -10,6 +10,7 @@ import {
   grantComplimentaryInvestmentByRivalId,
   MAX_SHARE_PER_RIVAL,
 } from "./investments";
+import { formatCompactMoney } from "./currency";
 import { clamp } from "./math";
 import { calculatePlayerEquityValue } from "./player";
 import { getLocalMarketSummary } from "./watchlist";
@@ -111,7 +112,7 @@ const PRESTIGE_DEFINITIONS: PrestigeDefinition[] = [
     title: "Local Champion",
     category: "Rivalry",
     description: "Lead your local rival circuit.",
-    rewardPreview: "$12k cash bonus",
+    rewardPreview: `${formatCompactMoney(12_000)} cash bonus`,
     points: 5,
     evaluate: ({ localMarketSummary }) => {
       const progressRatio = localMarketSummary
@@ -175,7 +176,7 @@ const PRESTIGE_DEFINITIONS: PrestigeDefinition[] = [
     title: "World Spotlight",
     category: "Buzz",
     description: "Capture the World Spotlight once.",
-    rewardPreview: "$20k cash payout",
+    rewardPreview: `${formatCompactMoney(20_000)} cash payout`,
     points: 9,
     evaluate: ({ state }) => ({
       completed: state.player.prestige.records.totalSpotlightWins >= 1,
@@ -203,7 +204,7 @@ const PRESTIGE_DEFINITIONS: PrestigeDefinition[] = [
     title: "Buzz Breakout",
     category: "Buzz",
     description: "Catch Breakout Buzz once.",
-    rewardPreview: "$8k cash bonus",
+    rewardPreview: `${formatCompactMoney(8_000)} cash bonus`,
     points: 3,
     evaluate: ({ state }) => ({
       completed: state.player.prestige.records.totalBuzzWins >= 1,
@@ -230,12 +231,12 @@ const PRESTIGE_DEFINITIONS: PrestigeDefinition[] = [
     key: "cash_100k",
     title: "Cash Cushion",
     category: "Finance",
-    description: "Hold $100k in cash at once.",
-    rewardPreview: "$15k liquidity bonus",
+    description: `Hold ${formatCompactMoney(100_000)} in cash at once.`,
+    rewardPreview: `${formatCompactMoney(15_000)} liquidity bonus`,
     points: 4,
     evaluate: ({ state }) => ({
       completed: state.player.prestige.records.peakMoney >= 100_000,
-      progressLabel: `${formatCompactMoney(Math.min(100_000, state.player.prestige.records.peakMoney))}/$100k`,
+      progressLabel: `${formatCompactMoney(Math.min(100_000, state.player.prestige.records.peakMoney))}/${formatCompactMoney(100_000)}`,
       progressRatio: clamp(state.player.prestige.records.peakMoney / 100_000, 0, 1),
       unlockSummary: "You built enough liquidity to stop playing every month on the edge.",
     }),
@@ -244,12 +245,12 @@ const PRESTIGE_DEFINITIONS: PrestigeDefinition[] = [
     key: "equity_1m",
     title: "Million Value Park",
     category: "Finance",
-    description: "Reach $1m in equity value.",
+    description: `Reach ${formatCompactMoney(1_000_000)} in equity value.`,
     rewardPreview: "+6 score for 2 months",
     points: 6,
     evaluate: ({ state }) => ({
       completed: state.player.prestige.records.peakEquityValue >= 1_000_000,
-      progressLabel: `${formatCompactMoney(Math.min(1_000_000, state.player.prestige.records.peakEquityValue))}/$1.0m`,
+      progressLabel: `${formatCompactMoney(Math.min(1_000_000, state.player.prestige.records.peakEquityValue))}/${formatCompactMoney(1_000_000)}`,
       progressRatio: clamp(state.player.prestige.records.peakEquityValue / 1_000_000, 0, 1),
       unlockSummary: "Your park crossed the line from small operator to serious asset.",
     }),
@@ -258,12 +259,12 @@ const PRESTIGE_DEFINITIONS: PrestigeDefinition[] = [
     key: "profit_25k",
     title: "Cash Machine",
     category: "Finance",
-    description: "Post a $25k monthly profit.",
-    rewardPreview: "$18k cash payout",
+    description: `Post a ${formatCompactMoney(25_000)} monthly profit.`,
+    rewardPreview: `${formatCompactMoney(18_000)} cash payout`,
     points: 5,
     evaluate: ({ state }) => ({
       completed: state.player.prestige.records.peakMonthlyProfit >= 25_000,
-      progressLabel: `${formatCompactMoney(Math.min(25_000, state.player.prestige.records.peakMonthlyProfit))}/$25k`,
+      progressLabel: `${formatCompactMoney(Math.min(25_000, state.player.prestige.records.peakMonthlyProfit))}/${formatCompactMoney(25_000)}`,
       progressRatio: clamp(state.player.prestige.records.peakMonthlyProfit / 25_000, 0, 1),
       unlockSummary: "Your operations are now strong enough to spin off real surplus cash.",
     }),
@@ -578,7 +579,7 @@ function applyAchievementReward(
       return grantCashReward(
         context.state,
         12_000,
-        "Achievement reward: $12k local winner bonus."
+        `Achievement reward: ${formatCompactMoney(12_000)} local winner bonus.`
       );
     case "top10_3m":
       return launchPrestigeRewardProgram(
@@ -604,7 +605,7 @@ function applyAchievementReward(
       return grantCashReward(
         context.state,
         20_000,
-        "Achievement reward: $20k global spotlight payout."
+        `Achievement reward: ${formatCompactMoney(20_000)} global spotlight payout.`
       );
     case "featured_first":
       return grantComplimentaryStakeReward(
@@ -616,7 +617,7 @@ function applyAchievementReward(
       return grantCashReward(
         context.state,
         8_000,
-        "Achievement reward: $8k breakout buzz bonus."
+        `Achievement reward: ${formatCompactMoney(8_000)} breakout buzz bonus.`
       );
     case "award_yearly":
       return launchPrestigeRewardProgram(
@@ -634,7 +635,7 @@ function applyAchievementReward(
       return grantCashReward(
         context.state,
         15_000,
-        "Achievement reward: $15k liquidity bonus."
+        `Achievement reward: ${formatCompactMoney(15_000)} liquidity bonus.`
       );
     case "equity_1m":
       return launchPrestigeRewardProgram(
@@ -652,7 +653,7 @@ function applyAchievementReward(
       return grantCashReward(
         context.state,
         18_000,
-        "Achievement reward: $18k profit-sharing bonus."
+        `Achievement reward: ${formatCompactMoney(18_000)} profit-sharing bonus.`
       );
     case "holdings_3":
       return grantComplimentaryStakeReward(
@@ -803,7 +804,7 @@ function grantComplimentaryStakeReward(
     return grantCashReward(
       context.state,
       15_000,
-      `${fallbackSummary} No stake target was available, so you received $15k instead.`
+      `${fallbackSummary} No stake target was available, so you received ${formatCompactMoney(15_000)} instead.`
     );
   }
 
@@ -817,7 +818,7 @@ function grantComplimentaryStakeReward(
     return grantCashReward(
       context.state,
       15_000,
-      `${fallbackSummary} No room for the stake, so you received $15k instead.`
+      `${fallbackSummary} No room for the stake, so you received ${formatCompactMoney(15_000)} instead.`
     );
   }
 
@@ -908,17 +909,6 @@ function getMonthlyPlayerPoints(state: WorldParkLeagueState): ParkHistoryPoint[]
   }
 
   return [...monthly.values()].sort((left, right) => left.month - right.month);
-}
-
-function formatCompactMoney(value: number): string {
-  const rounded = Math.max(0, Math.round(value));
-  if (rounded >= 1_000_000) {
-    return `$${(rounded / 1_000_000).toFixed(1)}m`;
-  }
-  if (rounded >= 1_000) {
-    return `$${(rounded / 1_000).toFixed(0)}k`;
-  }
-  return `$${rounded}`;
 }
 
 function trimText(value: string, maxLength: number): string {

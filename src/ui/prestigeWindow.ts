@@ -5,6 +5,7 @@ import {
   getPrestigeRewardSummary,
 } from "../domain/prestige";
 import { readPlayerSnapshot } from "../domain/player";
+import { formatCompactMoney } from "../domain/currency";
 import { buildYearlyRecap } from "../domain/progression";
 import {
   buildAnalystInsight,
@@ -348,17 +349,6 @@ function formatWhen(month: number, dayIndex: number): string {
 
 function formatCount(value: number): string {
   return Math.round(value).toLocaleString("en-US");
-}
-
-function formatCompactMoney(value: number): string {
-  const absValue = Math.abs(Math.round(value));
-  if (absValue >= 1_000_000) {
-    return `$${(absValue / 1_000_000).toFixed(1)}m`;
-  }
-  if (absValue >= 1_000) {
-    return `$${(absValue / 1_000).toFixed(0)}k`;
-  }
-  return `$${absValue}`;
 }
 
 function trimText(value: string, maxLength: number): string {

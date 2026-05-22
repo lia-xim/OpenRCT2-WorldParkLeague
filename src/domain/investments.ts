@@ -1,3 +1,4 @@
+import { formatMoney, formatSignedMoney } from "./currency";
 import { clamp, deepClone, roundTo } from "./math";
 import type {
   PlayerInvestment,
@@ -611,15 +612,6 @@ function failure(state: WorldParkLeagueState, message: string): InvestmentTransa
     cashDelta: 0,
     message,
   };
-}
-
-function formatMoney(value: number): string {
-  return `$${Math.round(value).toLocaleString("en-US")}`;
-}
-
-function formatSignedMoney(value: number): string {
-  const prefix = value >= 0 ? "+" : "-";
-  return `${prefix}${formatMoney(Math.abs(value))}`;
 }
 
 function trimName(value: string, maxLength: number): string {
