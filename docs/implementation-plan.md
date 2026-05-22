@@ -257,8 +257,10 @@ Definition of done:
 
 Status:
 
-- noch offen
-- fachlich vorbereitet, weil Rivalenwerte, Board-/Equity-Logik und bestehende Beteiligungsmodelle schon existieren
+- erste Owner-Finance-Welle umgesetzt
+- Owner Cash, Board Salary, Owner Net Worth und ein einziges Owner-Portfolio sind jetzt Teil der Runtime
+- Save-Migration fuer bestehende Rivalen-Investments auf die Owner-Ebene ist eingebaut
+- naechster sinnvoller Ausbau ist UI-/Diagnostik-Tiefe, nicht mehr die Grundarchitektur
 - Architekturentscheidung dokumentiert in `docs/owner-finance-design.md`
 
 ## Phase 9: Advanced Brokerage (optional / spaeter)
@@ -290,12 +292,11 @@ Status:
 
 1. Investment-Ertraege, Cashflow und Snowballing gegen echte Parks balancieren
 2. Investor- und Board-Mechaniken ueber echte Saves und Balancing-Runden feinjustieren
-3. Owner-Finance-Scope sauber schneiden: persoenliches Cash, Salary, Net Worth und Holdings
-4. Bestehende Treasury-Investments gegen spaetere persoenliche Holdings abgrenzen
-5. Einfachen Rivalen-Aktienmarkt ohne Margin/Shorting konzipieren
-6. Score-, Markt- und Event-Diagnostik im UI weiter vertiefen
-7. Groessere Ingame-Testlaeufe und Formelfeinjustierung durchfuehren
-8. Spaetere Meta-Systeme wie Einflussrechte oder Synergien vorbereiten
+3. Owner-Finance-UI und Cashflow-Diagnostik weiter vertiefen
+4. Einfachen Rivalen-Aktienmarkt ohne Margin/Shorting weiter ausbauen
+5. Score-, Markt- und Event-Diagnostik im UI weiter vertiefen
+6. Groessere Ingame-Testlaeufe und Formelfeinjustierung durchfuehren
+7. Spaetere Meta-Systeme wie Einflussrechte oder Synergien vorbereiten
 
 ## Entscheidung fuer den Start
 

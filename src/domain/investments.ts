@@ -33,7 +33,7 @@ interface MergerConversionResult {
 export function buyInvestmentByRivalId(
   state: WorldParkLeagueState,
   rivalId: string,
-  availableCash: number,
+  availableOwnerCash: number,
   currentMonth: number,
   share: number = BASE_LOT_SHARE
 ): InvestmentTransactionResult {
@@ -60,8 +60,8 @@ export function buyInvestmentByRivalId(
     nextState.world.capitalMarketMood,
     currentShare
   );
-  if (availableCash < cost) {
-    return failure(nextState, `Not enough cash. Need ${formatMoney(cost)}.`);
+  if (availableOwnerCash < cost) {
+    return failure(nextState, `Not enough owner cash. Need ${formatMoney(cost)}.`);
   }
 
   if (existing) {

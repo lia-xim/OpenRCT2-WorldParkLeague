@@ -28,7 +28,8 @@ It adds:
 - a `50`-park living league that updates every day
 - local rivals that compete directly with you for attention
 - prestige, yearly recaps, achievements, and long-term progression
-- a management layer with investments, buybacks, governance, and rewards
+- an owner-finance layer with salary, owner cash, net worth, and one unified rival portfolio
+- a management layer with buybacks, governance, and rewards
 - rivalry pressure that gives late-game parks something meaningful to fight for
 
 The goal is not to replace OpenRCT2.  
@@ -50,7 +51,7 @@ This plugin is for you if you want:
 | --- | --- |
 | Global competition | 50 simulated parks, daily movement, major world events, mergers, bankruptcies, recoveries, expansion waves |
 | Player pressure | People share, guest-cap pressure, score races, local rivals, spotlight and buzz swings |
-| Management layer | Investments, portfolio tracking, exits, buybacks, governance pressure, management actions |
+| Management layer | Owner portfolio, dividends, exits, salary, buybacks, governance pressure, management actions |
 | Progression | Prestige goals, achievement rewards, yearly recap, records, trend charts, progress filters |
 | Rival storytelling | primary rivals, watchlist alerts, head-to-head challenges, analyst guidance, league headlines |
 
@@ -84,7 +85,8 @@ That is the fantasy: not just a better spreadsheet, but a better story.
 
 ### Management and economy
 
-- invest in other parks and track portfolio performance
+- receive a board salary and grow separate owner cash outside the park treasury
+- invest in other parks through one unified owner portfolio
 - receive dividends and handle merger carry-over or forced exits
 - manage equity offers, buybacks, and governance pressure
 - use management actions to push for momentum or stability

@@ -232,6 +232,15 @@ export interface PlayerInvestmentSummary {
   lastMonthCashDelta: number;
 }
 
+export interface PlayerOwnerState {
+  cash: number;
+  lastSalary: number;
+  totalSalaryReceived: number;
+  lifetimeNetCashFlow: number;
+  lastCashFlow: number;
+  lastCashFlowSummary: string | null;
+}
+
 export interface PlayerEquityOffer {
   id: string;
   month: number;
@@ -422,6 +431,7 @@ export interface PlayerLeagueState {
   monthsAtRankOne: number;
   activeAwardTitle: string | null;
   activeAwardMonthsRemaining: number;
+  owner: PlayerOwnerState;
   investments: PlayerInvestment[];
   investmentSummary: PlayerInvestmentSummary;
   equity: PlayerEquityState;
@@ -513,7 +523,8 @@ export interface MonthlySimulationResult {
   nextState: WorldParkLeagueState;
   month: number;
   headlines: NewsItem[];
-  playerCashDelta: number;
+  parkCashDelta: number;
+  ownerCashDelta: number;
   playerNotifications: string[];
 }
 
@@ -521,6 +532,7 @@ export interface LivePulseResult {
   nextState: WorldParkLeagueState;
   dayIndex: number;
   headlines: NewsItem[];
-  playerCashDelta: number;
+  parkCashDelta: number;
+  ownerCashDelta: number;
   playerNotifications: string[];
 }

@@ -128,7 +128,7 @@ describe("simulateMonth", () => {
 
     const result = simulateMonth(buyResult.state, createSnapshot(), 0);
 
-    expect(result.playerCashDelta).toBeGreaterThan(0);
+    expect(result.ownerCashDelta).toBeGreaterThan(0);
     expect(result.playerNotifications.length).toBeGreaterThan(0);
     expect(result.nextState.player.investments).toHaveLength(0);
   });

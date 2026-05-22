@@ -181,8 +181,9 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Prestige-/Achievement-Layer mit eigener UI und persistenten Rekorden einziehen
 - [x] Head-to-head-Rivalitaet und Analystenfuehrung fuer bessere Lesbarkeit und mehr Story einziehen
 - [x] Release-Soak und wirtschaftliche Reward-/Investment-Hebel in den Balance-Lab-Workflow einziehen
-- [ ] Naechste groessere Systemwelle als vereinfachte Eigentuemer-/Stock-Market-Ebene vorbereiten
-- [ ] Scope fuer persoenliche Finanzen bewusst klein halten und erst spaeter um Margin/Shorting erweitern
+- [x] Erste `Owner Finance`-Welle mit Owner Cash, Salary, Owner Net Worth und einheitlichem Rivalen-Portfolio umsetzen
+- [x] Bestehende Rivalen-Investments auf eine Owner-Ebene migrieren statt ein zweites Parallel-System zu bauen
+- [x] Scope fuer persoenliche Finanzen bewusst klein halten und erst spaeter um Margin/Shorting erweitern
 
 ## Naechste Umsetzungsschritte
 
@@ -190,11 +191,10 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 2. Investment-Balancing ueber echte Spielsituationen pruefen, vor allem ROI ueber mehrere Jahre
 3. Kapitalmassnahmen und Board-Votes ueber echte Saves feinjustieren
 4. Watchlist/Alerts ueber echte Savegames auf Signal-zu-Rauschen und Alert-Haeufigkeit feinjustieren
-5. `Owner Finance` spezifizieren: persoenliches Cash, Salary, Net Worth und eigene Holdings
-6. Vereinfachten Rivalen-Aktienmarkt fuer persoenliche Kauf-/Verkaufsentscheidungen planen
-7. Bestehende Investment-Logik auf Owner Holdings migrieren und Park-/Owner-Cashflows sauber trennen
-8. Erst danach pruefen, ob Margin Buying als kontrollierte Erweiterung genug Mehrwert bringt
-9. Short Selling nur als spaete optionale Erweiterung behandeln, nicht als naechsten Kernschritt
-10. Weitere Diagnoseansichten fuer Score-, Markt- und Event-Ursachen ausbauen
-11. GitHub-Release mit Screenshots, Beschreibung und Paket-Artefakten veroeffentlichen
-12. Anforderungen und Tracker nach jeder Feature-Welle aktualisieren
+5. Owner-Finance-UI weiter ausbauen, vor allem Cashflow-Historie, Salary-Kontext und persoenliche Finanztransparenz
+6. Vereinfachten Rivalen-Aktienmarkt fuer persoenliche Kauf-/Verkaufsentscheidungen weiter vertiefen
+7. Erst danach pruefen, ob Margin Buying als kontrollierte Erweiterung genug Mehrwert bringt
+8. Short Selling nur als spaete optionale Erweiterung behandeln, nicht als naechsten Kernschritt
+9. Weitere Diagnoseansichten fuer Score-, Markt- und Event-Ursachen ausbauen
+10. GitHub-Release mit Screenshots, Beschreibung und Paket-Artefakten veroeffentlichen
+11. Anforderungen und Tracker nach jeder Feature-Welle aktualisieren

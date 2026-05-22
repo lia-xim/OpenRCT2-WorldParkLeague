@@ -231,7 +231,7 @@ const PRESTIGE_DEFINITIONS: PrestigeDefinition[] = [
     key: "cash_100k",
     title: "Cash Cushion",
     category: "Finance",
-    description: `Hold ${formatCompactMoney(100_000)} in cash at once.`,
+    description: `Hold ${formatCompactMoney(100_000)} in owner cash at once.`,
     rewardPreview: `${formatCompactMoney(15_000)} liquidity bonus`,
     points: 4,
     evaluate: ({ state }) => ({
@@ -364,7 +364,7 @@ export function updatePrestigeProgress(
         : Math.min(records.bestRank, state.player.currentRank);
   records.peakScore = Math.max(records.peakScore, state.player.score);
   records.peakGuests = Math.max(records.peakGuests, snapshot.guests);
-  records.peakMoney = Math.max(records.peakMoney, snapshot.cash);
+  records.peakMoney = Math.max(records.peakMoney, state.player.owner.cash);
   records.peakParkValue = Math.max(records.peakParkValue, snapshot.parkValue);
   records.peakEquityValue = Math.max(records.peakEquityValue, equityValue);
   records.peakPeopleShare = Math.max(records.peakPeopleShare, state.player.marketShare);

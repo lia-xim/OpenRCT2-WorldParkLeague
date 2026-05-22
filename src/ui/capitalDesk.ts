@@ -362,7 +362,7 @@ function updateCapitalDeskContents(state: WorldParkLeagueState, snapshot: Player
         right: { label: "Outside owned", value: `${(outsideShare * 100).toFixed(0)}%` },
       },
       {
-        left: { label: "Money", value: formatCompactMoney(snapshot.cash) },
+        left: { label: "Park cash", value: formatCompactMoney(snapshot.cash) },
         right: { label: "Cash raised", value: formatCompactMoney(state.player.equity.totalCashRaised) },
       },
       {

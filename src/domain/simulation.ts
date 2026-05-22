@@ -14,9 +14,16 @@ import {
   WORLD_DEMAND_BASE,
 } from "../config";
 import { advancePlayerEquityMarket, createInitialEquityState } from "./equity";
+import { formatCompactMoney } from "./currency";
 import { advancePlayerGovernance, createInitialGovernanceState } from "./governance";
 import { recordHistoryMarkers, recordHistorySnapshot } from "./history";
 import { refreshInvestmentSummary, settleInvestmentsForMonth } from "./investments";
+import {
+  applyOwnerCashDelta,
+  createInitialOwnerState,
+  recordOwnerCashFlowSummary,
+  settleOwnerFinanceForMonth,
+} from "./owner";
 import {
   advancePlayerActionsForDay,
   createInitialPlayerActionState,
@@ -147,6 +154,7 @@ export function createInitialStateAtDay(
       monthsAtRankOne: 0,
       activeAwardTitle: null,
       activeAwardMonthsRemaining: 0,
+      owner: createInitialOwnerState(),
       investments: [],
       investmentSummary: {
         holdings: 0,
@@ -325,6 +333,8 @@ export function simulateMonth(
   const equityResult = advancePlayerEquityMarket(nextState, playerSnapshot, month);
   headlines.push(...equityResult.news);
   playerNotifications.push(...equityResult.notifications);
+  const ownerFinance = settleOwnerFinanceForMonth(nextState, playerSnapshot);
+  playerNotifications.push(...ownerFinance.notifications);
 
   nextState.player.guestCapModifier = roundTo(
     clamp(
@@ -349,6 +359,21 @@ export function simulateMonth(
   recordHistoryMarkers(nextState, headlines, month * DAYS_PER_MONTH);
   const prestigeUpdate = updatePrestigeProgress(nextState, playerSnapshot, headlines);
   playerNotifications.push(...prestigeUpdate.notifications);
+  const ownerRewardCashDelta = settlement.cashDelta + prestigeUpdate.cashDelta + challengeCashDelta;
+  if (ownerRewardCashDelta !== 0) {
+    applyOwnerCashDelta(nextState, ownerRewardCashDelta);
+  }
+  const totalOwnerCashDelta = ownerFinance.cashDelta + ownerRewardCashDelta;
+  recordOwnerCashFlowSummary(
+    nextState,
+    buildOwnerCashFlowSummary(
+      ownerFinance.cashDelta,
+      settlement.cashDelta,
+      prestigeUpdate.cashDelta,
+      challengeCashDelta
+    ),
+    totalOwnerCashDelta
+  );
   advanceSpotlightDebugOverride(nextState, DAYS_PER_MONTH);
 
   nextState.lastSimulatedMonth = month;
@@ -361,7 +386,8 @@ export function simulateMonth(
     nextState,
     month,
     headlines,
-    playerCashDelta: settlement.cashDelta + prestigeUpdate.cashDelta + challengeCashDelta,
+    parkCashDelta: 0,
+    ownerCashDelta: totalOwnerCashDelta,
     playerNotifications,
   };
 }
@@ -518,6 +544,15 @@ export function simulateLivePulse(
   recordHistoryMarkers(nextState, headlines, dayIndex);
   const prestigeUpdate = updatePrestigeProgress(nextState, playerSnapshot, headlines);
   playerNotifications.push(...prestigeUpdate.notifications);
+  const totalOwnerCashDelta = prestigeUpdate.cashDelta + challengeCashDelta;
+  if (totalOwnerCashDelta !== 0) {
+    applyOwnerCashDelta(nextState, totalOwnerCashDelta);
+  }
+  recordOwnerCashFlowSummary(
+    nextState,
+    buildOwnerCashFlowSummary(0, 0, prestigeUpdate.cashDelta, challengeCashDelta),
+    totalOwnerCashDelta
+  );
   advanceSpotlightDebugOverride(nextState, Math.max(1, nextState.config.livePulseIntervalDays));
   nextState.lastLivePulseDayIndex = dayIndex;
 
@@ -549,9 +584,33 @@ export function simulateLivePulse(
     nextState,
     dayIndex,
     headlines,
-    playerCashDelta: prestigeUpdate.cashDelta + challengeCashDelta,
+    parkCashDelta: 0,
+    ownerCashDelta: totalOwnerCashDelta,
     playerNotifications,
   };
+}
+
+function buildOwnerCashFlowSummary(
+  salaryDelta: number,
+  portfolioDelta: number,
+  prestigeDelta: number,
+  challengeDelta: number
+): string | null {
+  const parts: string[] = [];
+  if (salaryDelta !== 0) {
+    parts.push(`Salary ${formatSignedMoneyCompact(salaryDelta)}`);
+  }
+  if (portfolioDelta !== 0) {
+    parts.push(`Portfolio ${formatSignedMoneyCompact(portfolioDelta)}`);
+  }
+  if (prestigeDelta !== 0) {
+    parts.push(`Prestige ${formatSignedMoneyCompact(prestigeDelta)}`);
+  }
+  if (challengeDelta !== 0) {
+    parts.push(`Rivalry ${formatSignedMoneyCompact(challengeDelta)}`);
+  }
+
+  return parts.length > 0 ? parts.join(" | ") : null;
 }
 
 function rollWorldEvent(state: WorldParkLeagueState, month: number): NewsItem | null {
@@ -2603,6 +2662,11 @@ function getRivalStatusLabel(rival: RivalPark): string {
 
 function formatSignedMetric(value: number): string {
   return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`;
+}
+
+function formatSignedMoneyCompact(value: number): string {
+  const prefix = value >= 0 ? "+" : "-";
+  return `${prefix}${formatCompactMoney(Math.abs(value))}`;
 }
 
 function describeStrategyFocus(strategyFocus: RivalPark["status"]["strategyFocus"]): string {

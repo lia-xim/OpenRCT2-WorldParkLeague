@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.21.0
+
+- Introduced the first production `Owner Finance` layer with dedicated owner cash, board salary, owner net worth, and save migration support.
+- Moved rival investing onto the owner side so buy/sell trades, dividends, rivalry rewards, and prestige cash payouts now route through one consistent portfolio model.
+- Clarified the in-game UI around park cash vs owner cash, renamed the portfolio area, and exposed owner salary / owner cashflow context in the main window.
+- Updated prestige tracking so finance-oriented goals now read from owner-side liquidity rather than the park treasury.
+
 ## 0.20.2
 
 - Switched the plugin away from hardcoded dollar UI strings toward the OpenRCT2 money formatter, so the in-game currency follows the player's actual game settings more closely.

@@ -3,6 +3,7 @@ import {
   getInvestmentInfluenceLabel,
   getPortfolioRows,
 } from "../domain/investments";
+import { calculateOwnerNetWorth } from "../domain/owner";
 import {
   calculatePlayerEquityValue,
   calculatePlayerScoreBreakdown,
@@ -96,7 +97,7 @@ const LEADERBOARD_SORT_OPTIONS = [
   "Crowd share",
   "Monthly result",
   "Park size",
-  "Money",
+  "Cash reserve",
 ] as const;
 const LEADERBOARD_VIEW_OPTIONS = ["Overview", "Business"] as const;
 const UI_MODE_OPTIONS = ["Simple", "Advanced"] as const;
@@ -105,7 +106,7 @@ const TREND_METRIC_OPTIONS = [
   "Live form",
   "Crowd share",
   "Park size",
-  "Money",
+  "Cash reserve",
   "Monthly result",
   "Rank",
 ] as const;
@@ -353,7 +354,7 @@ export function openMainWindow(): void {
             { header: "People", width: 56 },
             { header: "Profit", width: 76 },
             { header: "Value", width: 76 },
-            { header: "Money", width: 76 },
+      { header: "Reserve", width: 76 },
             { header: "Status", width: 62 },
           ],
           items: [],
@@ -536,7 +537,7 @@ export function openMainWindow(): void {
           },
         },
 
-        { type: "groupbox", x: 8, y: 554, width: 564, height: 156, text: "Your Holdings" },
+        { type: "groupbox", x: 8, y: 554, width: 564, height: 156, text: "Owner Portfolio" },
         {
           type: "listview",
           name: "portfolio-list",
@@ -648,6 +649,7 @@ function renderSummary(
     ? Math.max(0, comparisonEntry.score - state.player.score)
     : 0;
   const playerEquityValue = calculatePlayerEquityValue(snapshot);
+  const ownerNetWorth = calculateOwnerNetWorth(state, snapshot);
   const totalMarketCap = calculateLeagueMarketCapitalization(state, snapshot);
   const localMarketSummary = getLocalMarketSummary(state);
   const nowFocus = buildNowFocusSummary(state, snapshot, comparisonEntry, localMarketSummary);
@@ -672,8 +674,12 @@ function renderSummary(
           right: { label: "Guest boost", value: `x${state.player.guestCapModifier.toFixed(3)}` },
         },
         {
-          left: { label: "Cash", value: formatCompactMoney(snapshot.cash) },
-          right: { label: "Monthly result", value: formatCompactMoney(snapshot.lastMonthOperatingProfit) },
+          left: { label: "Park cash", value: formatCompactMoney(snapshot.cash) },
+          right: { label: "Owner cash", value: formatCompactMoney(state.player.owner.cash) },
+        },
+        {
+          left: { label: "Monthly result", value: formatCompactMoney(snapshot.lastMonthOperatingProfit) },
+          right: { label: "Owner salary", value: formatCompactMoney(state.player.owner.lastSalary) },
         },
         {
           left: { label: "Boost", value: combinedBoostSummary },
@@ -716,8 +722,12 @@ function renderSummary(
         right: { label: "Guest cap", value: `x${state.player.guestCapModifier.toFixed(3)}` },
       },
       {
-        left: { label: "Money", value: formatCompactMoney(snapshot.cash) },
-        right: { label: "Equity value", value: formatCompactMoney(playerEquityValue) },
+        left: { label: "Park money", value: formatCompactMoney(snapshot.cash) },
+        right: { label: "Owner cash", value: formatCompactMoney(state.player.owner.cash) },
+      },
+      {
+        left: { label: "Owner worth", value: formatCompactMoney(ownerNetWorth) },
+        right: { label: "Owner salary", value: formatCompactMoney(state.player.owner.lastSalary) },
       },
       {
         left: { label: "Boost", value: combinedBoostSummary },
@@ -1092,7 +1102,7 @@ function getLeaderboardColumns(
       { header: "Park", width: 152 },
       { header: "Profit", width: 78 },
       { header: "Value", width: 78 },
-      { header: "Money", width: 78 },
+      { header: "Reserve", width: 78 },
       { header: "Debt", width: 52 },
       { header: "People", width: 60 },
       { header: "Score", width: 54 },
@@ -1108,7 +1118,7 @@ function getLeaderboardColumns(
     { header: "People", width: 60 },
     { header: "Profit", width: 78 },
     { header: "Value", width: 78 },
-    { header: "Money", width: 78 },
+    { header: "Reserve", width: 78 },
     { header: "Status", width: 62 },
   ];
 }
@@ -1311,8 +1321,8 @@ function updateTradeButtons(
     "trade-hint",
     `${isFocusRival(state, selectedRival.id) ? "Local rival" : "Global rival"} | ${
       investment
-        ? `Held ${(investment.share * 100).toFixed(0)}%`
-        : "No holding"
+        ? `Owner stake ${(investment.share * 100).toFixed(0)}%`
+        : "No owner stake"
     }`
   );
 }
@@ -1408,7 +1418,9 @@ function buildPlayerDetailLines(
       `You are rank ${state.player.currentRank ?? "-"} of ${state.world.leaderboard.length}.${comparisonEntry ? ` Next target: ${comparisonEntry.parkName}.` : ""}`,
       `Crowd share: ${(state.player.marketShare * 100).toFixed(1)}%   Guest boost: x${state.player.guestCapModifier.toFixed(3)}   Form: ${describeMomentumBand(state.player.liveMomentum)}`,
       `Guests: ${snapshot.guests.toLocaleString("en-US")}   Park rating: ${snapshot.parkRating}   Open rides: ${snapshot.openRideCount}/${snapshot.totalRideCount}`,
-      `Monthly result: ${formatSignedMoney(snapshot.lastMonthOperatingProfit)}   Cash: ${formatMoney(snapshot.cash)}   Equity: ${formatMoney(playerEquityValue)}`,
+      `Monthly result: ${formatSignedMoney(snapshot.lastMonthOperatingProfit)}   Park cash: ${formatMoney(snapshot.cash)}   Owner cash: ${formatMoney(state.player.owner.cash)}`,
+      `Owner worth: ${formatMoney(calculateOwnerNetWorth(state, snapshot))}   Park equity: ${formatMoney(playerEquityValue)}`,
+      `Board salary: ${formatMoney(state.player.owner.lastSalary)}   Owner flow: ${trimText(state.player.owner.lastCashFlowSummary ?? "No recent owner cashflow.", 38)}`,
       `Why: ${trimText(explanationLine, 82)}`,
       `Goals: ${trimText(milestoneLine, 82)}`,
       `Rivalry: ${trimText(formatHeadToHeadLine(rivalrySummary), 82)}`,
@@ -1420,8 +1432,10 @@ function buildPlayerDetailLines(
   return [
     `Rank: ${state.player.currentRank ?? "-"} of ${state.world.leaderboard.length}   Score: ${state.player.score.toFixed(1)} (${formatDecoratedCompactDelta(state.player.score - state.player.previousScore)})`,
     `Guests: ${snapshot.guests.toLocaleString("en-US")}   Rating: ${snapshot.parkRating}   Share: ${(state.player.marketShare * 100).toFixed(1)}%   Live form: ${describeMomentumBand(state.player.liveMomentum)}`,
-    `Monthly profit/loss: ${formatSignedMoney(snapshot.lastMonthOperatingProfit)}   Revenue: ${formatMoney(snapshot.lastMonthRevenue)}   Money: ${formatMoney(snapshot.cash)}`,
-    `Equity value: ${formatMoney(playerEquityValue)}   Loan: ${formatMoney(snapshot.bankLoan)}   Open rides: ${snapshot.openRideCount}/${snapshot.totalRideCount}`,
+    `Monthly profit/loss: ${formatSignedMoney(snapshot.lastMonthOperatingProfit)}   Revenue: ${formatMoney(snapshot.lastMonthRevenue)}   Park money: ${formatMoney(snapshot.cash)}`,
+    `Owner cash: ${formatMoney(state.player.owner.cash)}   Owner worth: ${formatMoney(calculateOwnerNetWorth(state, snapshot))}   Loan: ${formatMoney(snapshot.bankLoan)}`,
+    `Park equity value: ${formatMoney(playerEquityValue)}   Open rides: ${snapshot.openRideCount}/${snapshot.totalRideCount}`,
+    `Board salary: ${formatMoney(state.player.owner.lastSalary)}   Owner flow: ${trimText(state.player.owner.lastCashFlowSummary ?? "No recent owner cashflow.", 52)}`,
     `Why: ${trimText(explanationLine, 106)}`,
     `Milestones: ${trimText(milestoneLine, 58)}   Drivers: ${trimText(scoreDrivers, 34)}`,
     `Rivalry: ${trimText(formatHeadToHeadLine(rivalrySummary), 106)}`,
@@ -1459,7 +1473,7 @@ function buildRivalDetailLines(
       `${localRival ? "Local rival" : watched ? "Tracked rival" : "Global rival"}   ${getArchetypeLabel(selectedRival.archetype)}   ${getStrategyLabel(selectedRival.status.strategyFocus)}`,
       `Rank ${selectedEntry.rank}   Score ${selectedEntry.score.toFixed(1)}   Form ${describeMomentumBand(selectedRival.momentum)}`,
       `Crowd share ${(selectedEntry.marketShare * 100).toFixed(1)}%   Guests ${selectedEntry.monthlyVisitors.toLocaleString("en-US")}   Risk ${selectedRival.risk.toFixed(0)}`,
-      `Monthly result ${formatSignedMoney(selectedRival.finance.monthlyProfit)}   Cash ${formatMoney(selectedRival.finance.cashReserve)}`,
+      `Monthly result ${formatSignedMoney(selectedRival.finance.monthlyProfit)}   Cash reserve ${formatMoney(selectedRival.finance.cashReserve)}`,
       investment
         ? `Your stake: ${(investment.share * 100).toFixed(0)}%   Role: ${getInvestmentInfluenceLabel(investment.share)}`
         : `Track: ${watched ? "On" : "Off"}   Local circuit: ${localRival ? getFocusRivalGapLabel(state, selectedRival.id) : "No"}`,
@@ -1473,7 +1487,7 @@ function buildRivalDetailLines(
     `Rank: ${selectedEntry.rank}   Score: ${selectedEntry.score.toFixed(1)} (${formatDecoratedCompactDelta(selectedEntry.scoreDelta)})`,
     `People share: ${(selectedEntry.marketShare * 100).toFixed(1)}%   Status: ${selectedEntry.statusLabel}   Live form: ${describeMomentumBand(selectedRival.momentum)}`,
     `Monthly profit/loss: ${formatSignedMoney(selectedRival.finance.monthlyProfit)}   Revenue: ${formatMoney(selectedRival.finance.monthlyRevenue)}`,
-    `Market cap: ${formatMoney(selectedRival.finance.companyValue)}   Money: ${formatMoney(selectedRival.finance.cashReserve)}   Visitors: ${selectedEntry.monthlyVisitors.toLocaleString("en-US")}`,
+    `Market cap: ${formatMoney(selectedRival.finance.companyValue)}   Cash reserve: ${formatMoney(selectedRival.finance.cashReserve)}   Visitors: ${selectedEntry.monthlyVisitors.toLocaleString("en-US")}`,
     `Identity: ${getArchetypeLabel(selectedRival.archetype)}   Strategy: ${getStrategyLabel(selectedRival.status.strategyFocus)}   Debt: ${(selectedEntry.debtRatio * 100).toFixed(1)}%`,
     `Head-to-head: ${trimText(formatHeadToHeadLine(rivalrySummary), 102)}`,
     `Challenge: ${trimText(challengeLine, 102)}`,
@@ -1694,7 +1708,7 @@ function getTrendMetricLabel(
     case "monthlyProfit":
       return `Monthly profit${suffix}`;
     case "money":
-      return `Money${suffix}`;
+      return `Cash reserve${suffix}`;
     case "rank":
       return "Rank";
     case "score":

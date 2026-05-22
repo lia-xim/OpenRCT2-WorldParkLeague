@@ -203,4 +203,61 @@ describe("migrateState", () => {
     expect(Array.isArray(migrated.player.prestige.activeRewards)).toBe(true);
     expect(migrated.player.prestige.lastRewardSummary).toBeNull();
   });
+
+  it("migrates legacy rival holdings into owner finance without requiring a second portfolio system", () => {
+    const snapshot = createSnapshot({
+      currentMonth: 22,
+      currentDay: 9,
+      currentDayIndex: 22 * 31 + 8,
+      cash: 18_000,
+      lastMonthOperatingProfit: 24_000,
+    });
+    const seeded = createInitialState(0, snapshot.parkName);
+    const [firstRival] = seeded.world.rivals;
+    if (!firstRival) {
+      throw new Error("Expected a rival in the seeded state.");
+    }
+
+    const { owner: _unusedOwner, ...legacyPlayer } = seeded.player;
+    const migrated = migrateState(
+      {
+        schemaVersion: 22,
+        pluginVersion: "0.20.2",
+        seededAtMonth: seeded.seededAtMonth,
+        lastSimulatedMonth: seeded.lastSimulatedMonth,
+        config: seeded.config,
+        world: seeded.world,
+        player: {
+          ...legacyPlayer,
+          investments: [
+            {
+              rivalId: firstRival.id,
+              share: 0.1,
+              costBasis: 42_000,
+              purchasedAtMonth: 10,
+              totalDividendsReceived: 6_000,
+              lastDividend: 2_000,
+              realizedProfit: 0,
+            },
+          ],
+          investmentSummary: {
+            ...seeded.player.investmentSummary,
+            holdings: 1,
+            investedCapital: 42_000,
+            portfolioValue: 57_000,
+            totalDividendsReceived: 6_000,
+            realizedProfit: 0,
+            lastMonthCashDelta: 2_000,
+          },
+        },
+      },
+      snapshot
+    );
+
+    expect(migrated.schemaVersion).toBe(23);
+    expect(migrated.player.owner.cash).toBeGreaterThan(0);
+    expect(migrated.player.owner.lastCashFlowSummary).toContain("Legacy holdings");
+    expect(migrated.player.investments).toHaveLength(1);
+    expect(migrated.player.investmentSummary.holdings).toBe(1);
+  });
 });

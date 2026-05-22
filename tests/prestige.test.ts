@@ -57,6 +57,7 @@ describe("prestige", () => {
     state.player.marketShare = 0.045;
     state.player.guestCapModifier = 1.31;
     state.player.monthsAtRankOne = 3;
+    state.player.owner.cash = 120_000;
     state.player.investments = [
       {
         rivalId: "r1",

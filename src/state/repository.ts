@@ -28,6 +28,11 @@ import {
   sellInvestmentByRivalId,
 } from "../domain/investments";
 import {
+  applyOwnerCashDelta,
+  createInitialOwnerState,
+  migrateLegacyOwnerCash,
+} from "../domain/owner";
+import {
   createInitialPlayerActionState,
   launchPlayerLeagueAction,
 } from "../domain/playerActions";
@@ -55,6 +60,7 @@ import type {
   PlayerRivalChallenge,
   PlayerPrestigeState,
   PlayerLeagueActionType,
+  PlayerOwnerState,
   PlayerRivalChallengeState,
   PlayerWatchlistState,
   SimulationConfig,
@@ -102,7 +108,7 @@ export function syncStateToCurrentMonth(
   while (state.lastSimulatedMonth < snapshot.currentMonth) {
     const result = simulateMonth(state, snapshot, state.lastSimulatedMonth + 1);
     results.push(result);
-    applyParkCashDelta(result.playerCashDelta);
+    applyParkCashDelta(result.parkCashDelta);
     state = result.nextState;
   }
 
@@ -117,7 +123,7 @@ export function syncStateToCurrentMonth(
     const nextPulseDayIndex = state.lastLivePulseDayIndex + state.config.livePulseIntervalDays;
     const result = simulateLivePulse(state, snapshot, nextPulseDayIndex);
     pulseResults.push(result);
-    applyParkCashDelta(result.playerCashDelta);
+    applyParkCashDelta(result.parkCashDelta);
     state = result.nextState;
   }
 
@@ -130,7 +136,7 @@ export function runManualSimulation(
 ): MonthlySimulationResult {
   const state = ensureState(snapshot);
   const result = simulateMonth(state, snapshot, state.lastSimulatedMonth + 1);
-  applyParkCashDelta(result.playerCashDelta);
+  applyParkCashDelta(result.parkCashDelta);
   saveState(result.nextState);
   return result;
 }
@@ -230,7 +236,7 @@ export function buyInvestmentForRival(
   const result = buyInvestmentByRivalId(
     state,
     rivalId,
-    liveSnapshot.cash,
+    state.player.owner.cash,
     liveSnapshot.currentMonth,
     share
   );
@@ -238,7 +244,7 @@ export function buyInvestmentForRival(
     return { state: result.state, ok: false, message: result.message };
   }
 
-  applyParkCashDelta(result.cashDelta);
+  applyOwnerCashDelta(result.state, result.cashDelta, result.message);
   saveState(result.state);
   return { state: result.state, ok: true, message: result.message };
 }
@@ -271,7 +277,7 @@ export function sellInvestmentForRival(
     return { state: result.state, ok: false, message: result.message };
   }
 
-  applyParkCashDelta(result.cashDelta);
+  applyOwnerCashDelta(result.state, result.cashDelta, result.message);
   saveState(result.state);
   return { state: result.state, ok: true, message: result.message };
 }
@@ -577,6 +583,7 @@ export function migrateState(
         typeof candidate.player.liveMomentum === "number"
           ? candidate.player.liveMomentum
           : freshState.player.liveMomentum,
+      owner: normalizeOwner(candidate.player.owner, freshState.player.owner),
       investments: Array.isArray(candidate.player.investments)
         ? candidate.player.investments.map((investment) => ({
             rivalId: investment.rivalId,
@@ -625,6 +632,12 @@ export function migrateState(
     merged.config.prestigeRewardBoostMultiplier = freshState.config.prestigeRewardBoostMultiplier;
   }
 
+  if (sourceSchemaVersion < 23 || !isObjectLike(candidate.player.owner)) {
+    merged.player.owner = createInitialOwnerState(migrateLegacyOwnerCash(merged, snapshot));
+    merged.player.owner.lastCashFlowSummary = "Legacy holdings moved into owner finance.";
+    merged.player.owner.lastCashFlow = 0;
+  }
+
   merged.world.spotlightGuestMultiplier = merged.config.spotlightGuestMultiplier;
   merged.world.featuredGuestMultiplier = merged.config.featuredGuestMultiplier;
   merged.world.breakoutGuestMultiplier = merged.config.breakoutGuestMultiplier;
@@ -637,6 +650,10 @@ export function migrateState(
   }
 
   refreshInvestmentSummary(merged, merged.player.investmentSummary.lastMonthCashDelta);
+  merged.player.prestige.records.peakMoney = Math.max(
+    merged.player.prestige.records.peakMoney,
+    merged.player.owner.cash
+  );
   return merged;
 }
 
@@ -1085,6 +1102,37 @@ function normalizeActions(
       typeof source.lastActionSummary === "string"
         ? source.lastActionSummary
         : fallback.lastActionSummary,
+  };
+}
+
+function normalizeOwner(
+  source: unknown,
+  fallback: PlayerOwnerState
+): PlayerOwnerState {
+  if (!isObjectLike(source)) {
+    return createInitialOwnerState(fallback.cash);
+  }
+
+  return {
+    ...fallback,
+    ...source,
+    cash: typeof source.cash === "number" ? Math.max(0, Math.round(source.cash)) : fallback.cash,
+    lastSalary:
+      typeof source.lastSalary === "number" ? Math.max(0, Math.round(source.lastSalary)) : fallback.lastSalary,
+    totalSalaryReceived:
+      typeof source.totalSalaryReceived === "number"
+        ? Math.max(0, Math.round(source.totalSalaryReceived))
+        : fallback.totalSalaryReceived,
+    lifetimeNetCashFlow:
+      typeof source.lifetimeNetCashFlow === "number"
+        ? Math.round(source.lifetimeNetCashFlow)
+        : fallback.lifetimeNetCashFlow,
+    lastCashFlow:
+      typeof source.lastCashFlow === "number" ? Math.round(source.lastCashFlow) : fallback.lastCashFlow,
+    lastCashFlowSummary:
+      typeof source.lastCashFlowSummary === "string"
+        ? source.lastCashFlowSummary
+        : fallback.lastCashFlowSummary,
   };
 }
 
