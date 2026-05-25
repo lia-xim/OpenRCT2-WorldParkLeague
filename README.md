@@ -4,12 +4,12 @@
 
 Turn OpenRCT2 into a living global park economy with rivalry, prestige, market pressure, investments, and endgame competition.
 
-[![CI](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/actions/workflows/ci.yml/badge.svg)](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Release](https://img.shields.io/github/v/release/lia-xim/OpenRCT2-WorldParkLeague)](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/releases)
-[![OpenRCT2](https://img.shields.io/badge/OpenRCT2-Plugin-2f855a)](https://openrct2.io/)
+<a href="https://github.com/lia-xim/OpenRCT2-WorldParkLeague/actions/workflows/ci.yml"><img src="https://github.com/lia-xim/OpenRCT2-WorldParkLeague/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+<a href="https://github.com/lia-xim/OpenRCT2-WorldParkLeague/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+<a href="https://github.com/lia-xim/OpenRCT2-WorldParkLeague/releases"><img src="https://img.shields.io/github/v/release/lia-xim/OpenRCT2-WorldParkLeague" alt="Release"></a>
+<a href="https://openrct2.io/"><img src="https://img.shields.io/badge/OpenRCT2-Plugin-2f855a" alt="OpenRCT2"></a>
 
-[Download Latest Release](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/releases) | [Report a Bug](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/issues/new/choose) | [Balance Feedback](https://github.com/lia-xim/OpenRCT2-WorldParkLeague/issues/new/choose) | [Contributing Guide](./CONTRIBUTING.md)
+<a href="https://github.com/lia-xim/OpenRCT2-WorldParkLeague/releases">Download Latest Release</a> | <a href="https://github.com/lia-xim/OpenRCT2-WorldParkLeague/issues/new/choose">Report a Bug</a> | <a href="https://github.com/lia-xim/OpenRCT2-WorldParkLeague/issues/new/choose">Balance Feedback</a> | <a href="https://github.com/lia-xim/OpenRCT2-WorldParkLeague/blob/main/CONTRIBUTING.md">Contributing Guide</a>
 
 </div>
 
