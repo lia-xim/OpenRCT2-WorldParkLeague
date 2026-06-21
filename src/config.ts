@@ -1,11 +1,11 @@
 import type { SimulationConfig } from "./types";
 
 export const PLUGIN_NAME = "World Park League";
-export const PLUGIN_VERSION = "0.22.0";
+export const PLUGIN_VERSION = "0.23.0";
 export const TARGET_API_VERSION = 81;
 export const STORAGE_KEY = "worldParkLeague.state";
 export const WINDOW_CLASSIFICATION = "world-park-league.main";
-export const CURRENT_SCHEMA_VERSION = 24;
+export const CURRENT_SCHEMA_VERSION = 25;
 export const PLAYER_PARK_ID = "__player__";
 export const WORLD_DEMAND_BASE = 14_000;
 export const DAYS_PER_MONTH = 31;

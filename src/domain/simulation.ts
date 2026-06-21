@@ -33,6 +33,7 @@ import {
   createInitialPlayerActionState,
   getPlayerActionEffects,
 } from "./playerActions";
+import { createInitialPlayerUiState } from "./playerUi";
 import {
   advancePrestigeRewardsForDays,
   createInitialPrestigeState,
@@ -175,6 +176,7 @@ export function createInitialStateAtDay(
       watchlist: createInitialWatchlistState(),
       rivalry: createInitialRivalChallengeState(),
       objectives: createInitialObjectiveState(),
+      ui: createInitialPlayerUiState(),
       prestige: createInitialPrestigeState(),
     },
   };
@@ -690,13 +692,13 @@ function maybeTriggerRivalPressureCampaign(
     "rival",
     "warning",
     `${summary.rivalName} launches a pressure campaign against your park.`,
-    "Discounts, ads and investor whispers are making the climb harder. Board patience, investor confidence and league momentum take a short-term hit.",
+    `${summary.rivalName} is undercutting tickets, buying local ad space and briefing investors against your growth story. Your board patience, investor confidence and league momentum take a short-term hit.`,
     summary.rivalId
   );
 
   return {
     news,
-    notification: `${summary.rivalName} pressure campaign: board patience, investors and momentum took a hit.`,
+    notification: `${summary.rivalName} pressure campaign: defend guests, profit or rating before the local narrative turns against you.`,
   };
 }
 

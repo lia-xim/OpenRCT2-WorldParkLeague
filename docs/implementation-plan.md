@@ -317,5 +317,6 @@ Der naechste logische Ausbau ist deshalb nicht maximale Finanzkomplexitaet, sond
 - einfacher Rivalen-Aktienmarkt mit Park-Cash-Risiko
 - klares League-Portfolio
 - sichtbare Rivalenangriffe und bessere UI-Erklaerung
+- First-Run-Onboarding, Popup-Pacing und Difficulty-Preset-QA
 
 Wenn dieser Kern funktioniert, kann der Rest organisch darauf wachsen.

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.23.0
+
+- Added a first-run quick-start window so new players immediately understand rank, goals, difficulty, money, rivals, and popups.
+- Added persistent popup pacing so important warnings stay visible without repeatedly interrupting the player.
+- Improved the simple park snapshot with a concrete weakest-score-driver explanation and next improvement target.
+- Rewrote rival pressure campaign messaging so attacks read like visible competitor moves, not just hidden stat changes.
+- Added `npm run analyze:balance:difficulty` to compare Casual, Normal, Hard, and Tycoon presets across the same QA scenarios.
+- Updated migration state to schema `25` for persisted UI/onboarding status.
+
 ## 0.22.0
 
 - Added difficulty presets (`Casual`, `Normal`, `Hard`, `Tycoon`) that scale objective frequency, penalties, rival pressure, investment shocks, and catch-up intensity.

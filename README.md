@@ -29,6 +29,7 @@ It adds:
 - local rivals that compete directly with you for attention
 - difficulty presets from relaxed to punishing
 - active target tasks with deadlines, rewards, and real penalties
+- a first-run guide that explains what matters before the player sees the full economy
 - prestige, yearly recaps, achievements, and long-term progression
 - a park-cash economy layer with one unified rival portfolio, real payouts, losses, penalties, and pressure
 - a management layer with buybacks, governance, and rewards
@@ -55,7 +56,7 @@ This plugin is for you if you want:
 | Player pressure | difficulty presets, active target tasks, people share, guest-cap pressure, score races, local rivals, spotlight and buzz swings |
 | Management layer | park-cash-funded rival portfolio, dividends, exits, negative investment shocks, challenge penalties, buybacks, governance pressure |
 | Progression | prestige goals, achievement rewards, yearly recap, records, trend charts, park-finance trend visibility, progress filters |
-| Rival storytelling | primary rivals, watchlist alerts, head-to-head challenges, visible warning popups, analyst guidance, league headlines |
+| Rival storytelling | first-run guide, primary rivals, watchlist alerts, head-to-head challenges, paced warning popups, analyst guidance, league headlines |
 
 ## What makes it feel different
 
@@ -93,6 +94,7 @@ That is the fantasy: not just a better spreadsheet, but a better story.
 - complete objectives for park-cash rewards and temporary momentum
 - fail objectives and lose real park cash while board and investor confidence take a hit
 - track active objectives and rival pressure in the compact challenge timeline
+- use `npm run analyze:balance:difficulty` during development to compare all difficulty presets across the same scenarios
 
 ### Management and economy
 
@@ -144,7 +146,9 @@ The main window is designed around two reading styles:
 - `Simple`: easier to scan while playing
 - `Advanced`: deeper management and analysis
 
-The default view now focuses on the next actionable things: current rank, park cash, profit, active goal, boost state, difficulty, and current risk. Deeper finance and rival context lives behind `Money`, `Rivals`, and `Goals`.
+The default view now focuses on the next actionable things: current rank, park cash, profit, active goal, boost state, difficulty, current risk, and the weakest score driver. Deeper finance and rival context lives behind `Money`, `Rivals`, and `Goals`.
+
+On the first open, the plugin shows a short quick-start window. Important warning popups are then paced so major rival attacks and failed objectives are visible without spamming the player.
 
 The shipped release UI is the real player-facing design.  
 Visible debug controls are intentionally removed from the public release experience.
@@ -225,6 +229,7 @@ npm run install:plugin
 
 ```powershell
 npm run analyze:balance:quick
+npm run analyze:balance:difficulty
 npm run analyze:balance
 npm run analyze:balance:lab
 npm run analyze:balance:autotune

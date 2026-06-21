@@ -99,6 +99,7 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Rivalen-Pressure-Campaigns gegen den Spieler, die Board, Investoren und Momentum kurzfristig belasten
 - [x] Verlorene Head-to-head-Challenges kosten echte Parkkasse statt nur eine verpasste Belohnung zu sein
 - [x] Sichtbare Warn-Popups fuer Rivalenangriffe, Zielverfehlungen, Investment-Schocks und harte Negativevents
+- [x] Popup-Pacing mit persistiertem Cooldown, damit wichtige Warnungen sichtbar bleiben ohne zu spammen
 
 ## UI und Bedienung
 
@@ -123,6 +124,7 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Track/Unwatch-Flow direkt aus der Rivalenansicht
 - [x] Einfachere Standard-Ansicht fuer neue Nutzer mit `Simple`/`Advanced`-Modus
 - [x] Hauptfenster weiter vereinfacht: Top-Level zeigt nur Rang, Park-Cash, Profit, aktives Ziel, Boost, Difficulty und Hauptrisiko
+- [x] First-Run-Quickstart-Fenster fuer neue Spieler
 - [x] Schnellzugriffe klarer benannt als `Money`, `Rivals` und `Goals`
 - [x] `What matters now`-Hinweise fuer die naechste sinnvolle Spieleraktion
 - [x] Lokale Markt-Zusammenfassung direkt im Hauptfenster
@@ -135,6 +137,7 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] `Prestige Goals` wie `1,000 guests`, `Top 10 streak`, lokaler Marktlead und People-Share-Ziele
 - [x] Reward-Vorschau und `Next unlock` fuer Prestige-Ziele
 - [x] Direkt erklaerende UI-Hinweise wie `Need +2.4 score`, `Losing people to X` und Profit-/Depth-Hinweise
+- [x] Konkreter `Score driver` in der Simple-Ansicht mit schwaechstem Score-Bereich und naechstem Verbesserungsziel
 - [x] History-Filter auf `7d`, `30d`, `Season`, `Year`, `All` erweitert und Vergleichsstatistiken im Trendbereich vertieft
 - [x] Langzeit-History fuer `All` ueber kompakte Daily/Weekly/Monthly-Aufbewahrung statt hartem Kurzzeit-Cap gehaertet
 - [x] Text-Panels gegen abgeschnittene Recap-/Goal-Zeilen robuster gemacht
@@ -168,6 +171,7 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Automatischer Tuning-Lauf via `npm run analyze:balance:autotune` mit konkreter Apply-/Keep-Empfehlung
 - [x] Langer Release-Soak via `npm run analyze:balance:release`
 - [x] Schnell-, Autotune- und Release-Reports werden als JSON-Artefakte unter `dist/` persistiert
+- [x] Difficulty-Preset-Report via `npm run analyze:balance:difficulty`
 - [x] Analyse-Skripte und Balance-Harness in die TypeScript-Pruefung eingebunden
 - [x] Numerische Guards gegen nicht-finite Score- und Leaderboard-Zustaende
 - [x] Explizite Anti-Dominanz-Hebel fuer Catch-up-Druck und lokale Rivalitaet in den Balance-Suchraum aufgenommen
@@ -202,11 +206,12 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Park-Cash-/Portfolio-Transparenz mit klarerer Erklaerung und Trenddaten ausgebaut
 - [x] Difficulty Presets, aktive Zielaufgaben, negative Investment-Events, Rivalen-Warn-Popups und Challenge-Timeline eingezogen
 - [x] Haupt-UI fuer neue Nutzer deutlich vereinfacht und tiefere Daten in Advanced-/Detailfenster verschoben
+- [x] First-Run-Onboarding, Popup-Pacing, bessere Score-Erklaerung und Difficulty-Preset-QA eingezogen
 
 ## Naechste Umsetzungsschritte
 
 1. Angewendetes Balance-Profil gegen echte Saves pruefen und bei Bedarf weiter verfeinern
-2. Difficulty Presets ueber echte kleine, mittlere und dominante Saves feinjustieren
+2. Difficulty Presets ueber echte kleine, mittlere und dominante Saves feinjustieren und mit `analyze:balance:difficulty` gegenpruefen
 3. Zielaufgaben-Haeufigkeit, Rewards und Strafen auf Spielspass statt nur Zahlenwert pruefen
 4. Challenge-Penalties, Pressure-Campaigns und Investment-Schocks ueber echte Spielsituationen pruefen
 5. Watchlist/Alerts/Popups ueber echte Savegames auf Signal-zu-Rauschen und Alert-Haeufigkeit feinjustieren

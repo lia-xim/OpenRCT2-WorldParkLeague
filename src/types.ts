@@ -417,6 +417,13 @@ export interface PlayerObjectiveState {
   lastObjectiveSummary: string | null;
 }
 
+export interface PlayerUiState {
+  hasSeenIntro: boolean;
+  lastPopupNewsId: string | null;
+  lastPopupDayIndex: number;
+  popupCooldownDays: number;
+}
+
 export interface PlayerPrestigeAchievement {
   key: string;
   title: string;
@@ -489,6 +496,7 @@ export interface PlayerLeagueState {
   watchlist: PlayerWatchlistState;
   rivalry: PlayerRivalChallengeState;
   objectives: PlayerObjectiveState;
+  ui: PlayerUiState;
   prestige: PlayerPrestigeState;
 }
 

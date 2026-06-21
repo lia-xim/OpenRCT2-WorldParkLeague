@@ -9,9 +9,11 @@ Diese Datei haelt den aktuellen wirtschaftlichen Review des Plugins fest. Ziel i
 - Such-/Optimierungs-Harness: `npm run analyze:balance:lab`
 - Automatischer Tuning-Lauf mit Empfehlung: `npm run analyze:balance:autotune`
 - Langer Release-Soak: `npm run analyze:balance:release`
+- Difficulty-Vergleich: `npm run analyze:balance:difficulty`
 - Alle Analyse-Skripte laufen ueber TypeScript mit und sind gegen nicht-finite Zustaende gehaertet.
 - Die wichtigsten Reports werden jetzt automatisch nach `dist/` geschrieben:
   - `dist/balance-quick-latest.json`
+  - `dist/balance-difficulty-latest.json`
   - `dist/balance-autotune-latest.json`
   - `dist/balance-release-latest.json`
 
@@ -73,6 +75,8 @@ Die neue `0.22.0`-Welle legt darueber eine Difficulty-Schicht:
 - `Tycoon` ist bewusst aggressiver fuer Spieler, denen die Liga sonst zu leicht wird.
 
 Wichtig: Difficulty veraendert keine zweite Parallelwirtschaft, sondern skaliert bestehende Systeme: Ziele, Rivalen-Challenges, Pressure-Campaigns, Catch-up und Investment-Risiko.
+
+Seit `0.23.0` gibt es einen eigenen Difficulty-Report, der Casual, Normal, Hard und Tycoon gegen dieselben Szenarien laufen laesst. Der aktuelle Referenzlauf (`18` Monate, `8` Seeds) zeigt die erwartete Richtung: Casual laesst mittlere und starke Parks leichter steigen, Hard/Tycoon druecken mittlere Parks staerker nach unten und senken Governance-/Investor-Puffer schneller.
 
 ## Aktuelle Kernbeobachtungen
 
@@ -178,6 +182,7 @@ Die beste Release-Routine bleibt deshalb:
 - Aktive Zielaufgaben koennen echte Park-Cash-Strafen ausloesen, wenn Deadline-Ziele verfehlt werden.
 - Riskante Rivalen-Holdings koennen negative Investment-Schocks erleiden, wodurch Paper Value und Zielpark-Finanzdaten fallen.
 - Alte oder starke Savegames werden bei einer neuen/migrierten League-State-Erstellung einmalig gegen ein staerkeres Rivalenfeld kalibriert, damit Rang 1 nicht sofort trivial wird.
+- Warn-Popups haben jetzt einen persistierten Cooldown, damit sie als wichtige Ereignisse wirken statt als Dauerunterbrechung.
 - Relevante Portfolio-Cashflows laufen wieder ueber die Parkkasse, damit Trading-Entscheidungen gameplayrelevant sind.
 - Das Balance Lab prueft jetzt nicht nur Ladder-/Spotlight-Werte, sondern auch Investment- und Prestige-Hebel.
 - Der Release-Soak ist jetzt als eigener Workflow reproduzierbar im Projekt verankert.

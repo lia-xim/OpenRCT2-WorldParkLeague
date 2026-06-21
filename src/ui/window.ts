@@ -47,7 +47,9 @@ import {
 } from "../domain/watchlist";
 import {
   buyInvestmentForRival,
+  markIntroSeen,
   readState,
+  recordPopupShown,
   sellInvestmentForRival,
   setDifficultyPreset,
   syncStateToCurrentMonth,
@@ -86,6 +88,7 @@ import type {
 const WINDOW_WIDTH = 980;
 const WINDOW_HEIGHT = 720;
 const ALERT_WINDOW_CLASSIFICATION = "world-park-league.alert";
+const INTRO_WINDOW_CLASSIFICATION = "world-park-league.intro";
 
 type LeaderboardSortMode =
   | "score"
@@ -670,6 +673,7 @@ function updateWindowContents(state: WorldParkLeagueState, snapshot: PlayerSnaps
     renderPortfolio(window, state);
     renderNews(window, state);
     updateTradeButtons(window, state, selectedRival);
+    maybeShowIntroWindow(state, snapshot);
     maybeShowLeagueAlert(state, snapshot);
     refreshCapitalDeskWindow();
     refreshWatchlistWindow();
@@ -680,6 +684,10 @@ function updateWindowContents(state: WorldParkLeagueState, snapshot: PlayerSnaps
 }
 
 function maybeShowLeagueAlert(state: WorldParkLeagueState, snapshot: PlayerSnapshot): void {
+  if (typeof ui !== "undefined" && ui.getWindow(INTRO_WINDOW_CLASSIFICATION)) {
+    return;
+  }
+
   const alert = state.world.newsFeed.find(
     (item) =>
       item.severity === "warning" &&
@@ -692,8 +700,66 @@ function maybeShowLeagueAlert(state: WorldParkLeagueState, snapshot: PlayerSnaps
     return;
   }
 
+  const uiState = state.player.ui;
+  if (uiState.lastPopupNewsId === alert.id) {
+    lastShownAlertId = alert.id;
+    return;
+  }
+
+  if (
+    uiState.lastPopupDayIndex >= 0 &&
+    snapshot.currentDayIndex - uiState.lastPopupDayIndex < uiState.popupCooldownDays
+  ) {
+    return;
+  }
+
   lastShownAlertId = alert.id;
+  recordPopupShown(alert.id, snapshot.currentDayIndex, snapshot);
   openLeagueAlertWindow(alert.headline, alert.detail);
+}
+
+function maybeShowIntroWindow(state: WorldParkLeagueState, snapshot: PlayerSnapshot): void {
+  if (typeof ui === "undefined" || state.player.ui.hasSeenIntro) {
+    return;
+  }
+
+  if (ui.getWindow(INTRO_WINDOW_CLASSIFICATION)) {
+    return;
+  }
+
+  ui.openWindow({
+    classification: INTRO_WINDOW_CLASSIFICATION,
+    title: "World Park League | Quick Start",
+    width: 460,
+    height: 188,
+    minWidth: 460,
+    minHeight: 188,
+    maxWidth: 460,
+    maxHeight: 188,
+    widgets: [
+      { type: "groupbox", x: 8, y: 18, width: 444, height: 126, text: "How to read the league" },
+      { type: "label", x: 20, y: 38, width: 420, height: 14, text: "1. Build your park normally. The league follows real save data." },
+      { type: "label", x: 20, y: 56, width: 420, height: 14, text: "2. Watch Rank, Park cash, Profit and your active Goal first." },
+      { type: "label", x: 20, y: 74, width: 420, height: 14, text: "3. Difficulty changes how often rivals attack and goals punish mistakes." },
+      { type: "label", x: 20, y: 92, width: 420, height: 14, text: "4. Money, Rivals and Goals open the deeper management screens." },
+      { type: "label", x: 20, y: 112, width: 420, height: 14, text: "Tip: If a popup appears, it is a real pressure event worth reacting to." },
+      {
+        type: "button",
+        x: 340,
+        y: 154,
+        width: 100,
+        height: 18,
+        text: "Start league",
+        onClick: () => {
+          markIntroSeen(snapshot);
+          const window = ui.getWindow(INTRO_WINDOW_CLASSIFICATION);
+          if (window) {
+            window.close();
+          }
+        },
+      },
+    ],
+  });
 }
 
 function openLeagueAlertWindow(headline: string, detail: string): void {
@@ -1566,6 +1632,7 @@ function buildPlayerDetailLines(
       `Cash ${formatMoney(snapshot.cash)} | Profit ${formatSignedMoney(snapshot.lastMonthOperatingProfit)} | Guests ${snapshot.guests.toLocaleString("en-US")}`,
       challengeOrGoal,
       `Why: ${trimText(explanationLine, 82)}`,
+      `Score driver: ${trimText(buildWeakScoreDriverSummary(playerBreakdown), 78)}`,
       `Rivalry: ${trimText(formatHeadToHeadLine(rivalrySummary), 82)}`,
     ];
   }
@@ -2300,6 +2367,51 @@ function buildScoreDriverSummary(
 
   const maturityNote = breakdown.maturityScore < 50 ? "still a young park" : "well-established";
   return `${drivers.join(", ")} | ${maturityNote}`;
+}
+
+function buildWeakScoreDriverSummary(
+  breakdown: ReturnType<typeof calculatePlayerScoreBreakdown>
+): string {
+  const drivers = [
+    {
+      label: "rating",
+      score: breakdown.ratingScore,
+      advice: "raise park rating with cleanliness, paths and guest happiness",
+    },
+    {
+      label: "guests",
+      score: breakdown.guestScore,
+      advice: "increase real visitor count and local people share",
+    },
+    {
+      label: "park value",
+      score: breakdown.valueScore,
+      advice: "build valuable attractions and keep loans under control",
+    },
+    {
+      label: "ride quality",
+      score: breakdown.rideQualityScore,
+      advice: "add higher excitement and satisfaction rides",
+    },
+    {
+      label: "park depth",
+      score: breakdown.portfolioScore,
+      advice: "add more open rides, stalls and capacity",
+    },
+    {
+      label: "maturity",
+      score: breakdown.maturityScore,
+      advice: "grow the park scale before finance can carry you",
+    },
+  ].sort((left, right) => left.score - right.score);
+
+  const weakest = drivers[0];
+  const second = drivers[1];
+  if (!weakest || !second) {
+    return "balanced enough; keep improving guests, value and quality";
+  }
+
+  return `${weakest.label} ${weakest.score.toFixed(0)} is lowest; ${weakest.advice}. Next: ${second.label} ${second.score.toFixed(0)}.`;
 }
 
 function buildLocalRaceTag(

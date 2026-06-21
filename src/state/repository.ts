@@ -37,6 +37,7 @@ import {
   createInitialPlayerActionState,
   launchPlayerLeagueAction,
 } from "../domain/playerActions";
+import { createInitialPlayerUiState } from "../domain/playerUi";
 import { createInitialObjectiveState } from "../domain/objectives";
 import { createInitialPrestigeState } from "../domain/prestige";
 import { createInitialRivalChallengeState } from "../domain/rivalry";
@@ -65,6 +66,7 @@ import type {
   PlayerPrestigeState,
   PlayerLeagueActionType,
   PlayerOwnerState,
+  PlayerUiState,
   PlayerRivalChallengeState,
   PlayerWatchlistState,
   SimulationConfig,
@@ -168,6 +170,27 @@ export function setDifficultyPreset(
 ): WorldParkLeagueState {
   const { state } = syncStateToCurrentMonth(snapshot);
   state.config.difficultyPreset = preset;
+  saveState(state);
+  return state;
+}
+
+export function markIntroSeen(
+  snapshot: PlayerSnapshot = readPlayerSnapshot()
+): WorldParkLeagueState {
+  const { state } = syncStateToCurrentMonth(snapshot);
+  state.player.ui.hasSeenIntro = true;
+  saveState(state);
+  return state;
+}
+
+export function recordPopupShown(
+  newsId: string,
+  dayIndex: number,
+  snapshot: PlayerSnapshot = readPlayerSnapshot()
+): WorldParkLeagueState {
+  const state = readState(snapshot);
+  state.player.ui.lastPopupNewsId = newsId;
+  state.player.ui.lastPopupDayIndex = Math.max(0, Math.round(dayIndex));
   saveState(state);
   return state;
 }
@@ -638,6 +661,7 @@ export function migrateState(
       watchlist: normalizeWatchlist(candidate.player.watchlist, freshState.player.watchlist),
       rivalry: normalizeRivalry(candidate.player.rivalry, freshState.player.rivalry),
       objectives: normalizeObjectives(candidate.player.objectives, freshState.player.objectives),
+      ui: normalizePlayerUi(candidate.player.ui, freshState.player.ui),
       prestige: normalizePrestige(candidate.player.prestige, freshState.player.prestige),
     },
   };
@@ -665,7 +689,7 @@ export function migrateState(
 
   if (sourceSchemaVersion < 23 || !isObjectLike(candidate.player.owner)) {
     merged.player.owner = createInitialOwnerState(migrateLegacyOwnerCash(merged, snapshot));
-    merged.player.owner.lastCashFlowSummary = "Legacy holdings moved into owner finance.";
+    merged.player.owner.lastCashFlowSummary = "Legacy holdings retained in the league portfolio.";
     merged.player.owner.lastCashFlow = 0;
   }
 
@@ -1472,6 +1496,34 @@ function normalizeObjectives(
       typeof source.lastObjectiveSummary === "string"
         ? source.lastObjectiveSummary
         : fallback.lastObjectiveSummary,
+  };
+}
+
+function normalizePlayerUi(
+  source: unknown,
+  fallback: PlayerUiState
+): PlayerUiState {
+  if (!isObjectLike(source)) {
+    return createInitialPlayerUiState();
+  }
+
+  return {
+    hasSeenIntro:
+      typeof source.hasSeenIntro === "boolean"
+        ? source.hasSeenIntro
+        : fallback.hasSeenIntro,
+    lastPopupNewsId:
+      typeof source.lastPopupNewsId === "string" || source.lastPopupNewsId === null
+        ? source.lastPopupNewsId
+        : fallback.lastPopupNewsId,
+    lastPopupDayIndex:
+      typeof source.lastPopupDayIndex === "number"
+        ? Math.round(source.lastPopupDayIndex)
+        : fallback.lastPopupDayIndex,
+    popupCooldownDays:
+      typeof source.popupCooldownDays === "number"
+        ? Math.max(1, Math.round(source.popupCooldownDays))
+        : fallback.popupCooldownDays,
   };
 }
 

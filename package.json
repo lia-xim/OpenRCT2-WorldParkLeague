@@ -1,6 +1,6 @@
 {
   "name": "openrct2-world-park-league",
-  "version": "0.22.0",
+  "version": "0.23.0",
   "private": true,
   "description": "Global competitor economy plugin for OpenRCT2.",
   "scripts": {
@@ -9,6 +9,7 @@
     "test": "vitest run",
     "analyze:balance": "node scripts/analyze-balance.mjs",
     "analyze:balance:quick": "node scripts/analyze-balance-quick.mjs",
+    "analyze:balance:difficulty": "node scripts/analyze-balance-difficulty.mjs",
     "analyze:balance:lab": "node scripts/analyze-balance-lab.mjs",
     "analyze:balance:autotune": "node scripts/analyze-balance-autotune.mjs",
     "analyze:balance:release": "node scripts/analyze-balance-release.mjs",

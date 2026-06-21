@@ -274,6 +274,8 @@ describe("migrateState", () => {
     expect(migrated.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
     expect(migrated.config.difficultyPreset).toBe("normal");
     expect(migrated.player.objectives.activeObjective).toBeNull();
+    expect(migrated.player.ui.hasSeenIntro).toBe(false);
+    expect(migrated.player.ui.popupCooldownDays).toBeGreaterThan(0);
     expect(migrated.player.owner.cash).toBeGreaterThan(0);
     expect(migrated.player.owner.lastCashFlowSummary).toContain("Legacy holdings");
     expect(migrated.player.investments).toHaveLength(1);
