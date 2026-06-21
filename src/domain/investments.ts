@@ -1,5 +1,7 @@
 import { formatMoney, formatSignedMoney } from "./currency";
+import { getDifficultyProfile } from "./difficulty";
 import { clamp, deepClone, roundTo } from "./math";
+import { createScopedRng, hashString } from "./random";
 import type {
   PlayerInvestment,
   PlayerInvestmentSummary,
@@ -33,7 +35,7 @@ interface MergerConversionResult {
 export function buyInvestmentByRivalId(
   state: WorldParkLeagueState,
   rivalId: string,
-  availableOwnerCash: number,
+  availableCash: number,
   currentMonth: number,
   share: number = BASE_LOT_SHARE
 ): InvestmentTransactionResult {
@@ -60,8 +62,8 @@ export function buyInvestmentByRivalId(
     nextState.world.capitalMarketMood,
     currentShare
   );
-  if (availableOwnerCash < cost) {
-    return failure(nextState, `Not enough owner cash. Need ${formatMoney(cost)}.`);
+  if (availableCash < cost) {
+    return failure(nextState, `Not enough park cash. Need ${formatMoney(cost)}.`);
   }
 
   if (existing) {
@@ -188,6 +190,17 @@ export function settleInvestmentsForMonth(
     }
 
     investment.lastDividend = 0;
+    const shockNotification = maybeApplyInvestmentShock(
+      nextState,
+      rival,
+      investment,
+      currentMonth,
+      index
+    );
+    if (shockNotification) {
+      notifications.push(shockNotification);
+    }
+
     const dividend = calculateDividend(
       rival,
       investment.share,
@@ -238,6 +251,50 @@ export function settleInvestmentsForMonth(
     cashDelta,
     notifications,
   };
+}
+
+function maybeApplyInvestmentShock(
+  state: WorldParkLeagueState,
+  rival: RivalPark,
+  investment: PlayerInvestment,
+  currentMonth: number,
+  index: number
+): string | null {
+  const profile = getDifficultyProfile(state.config.difficultyPreset);
+  const rng = createScopedRng(
+    state.world.seed,
+    currentMonth,
+    index + 1,
+    hashString(investment.rivalId),
+    4417
+  );
+  const baseChance =
+    0.012 +
+    rival.risk * 0.00025 +
+    rival.status.distressLevel * 0.018 +
+    rival.status.monthsInSlump * 0.004 +
+    (rival.status.scandalMonthsRemaining > 0 ? 0.03 : 0);
+  const holdingScale = investment.share >= 0.15 ? 1.15 : 1;
+  if (!rng.chance(baseChance * holdingScale * profile.investmentShockScale)) {
+    return null;
+  }
+
+  const severity = clamp(
+    rng.float(0.055, 0.16) +
+      rival.status.distressLevel * 0.025 +
+      (rival.status.scandalMonthsRemaining > 0 ? 0.03 : 0),
+    0.04,
+    0.24
+  );
+  const valueBefore = rival.finance.companyValue;
+  const valueLoss = Math.round(valueBefore * severity);
+  rival.finance.companyValue = Math.max(160_000, Math.round(valueBefore - valueLoss));
+  rival.finance.monthlyProfit = Math.round(rival.finance.monthlyProfit - valueLoss * 0.018);
+  rival.finance.cashReserve = Math.max(0, Math.round(rival.finance.cashReserve - valueLoss * 0.045));
+  rival.risk = clamp(rival.risk + severity * 45, 15, 95);
+  rival.status.monthsInSlump += rival.finance.monthlyProfit < 0 ? 1 : 0;
+
+  return `${rival.name} suffers a share shock. Your ${(investment.share * 100).toFixed(0)}% stake lost about ${formatMoney(valueLoss * investment.share)} in paper value.`;
 }
 
 function convertMergedInvestment(

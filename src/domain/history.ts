@@ -1,5 +1,6 @@
 import { DAYS_PER_MONTH, PLAYER_PARK_ID } from "../config";
 import { roundTo } from "./math";
+import { calculateOwnerNetWorth } from "./owner";
 import type {
   HistoryMetricKey,
   LeaderboardEntry,
@@ -41,7 +42,9 @@ export function recordHistorySnapshot(
         snapshot.cash,
         recordedMonth,
         state.player.liveMomentum,
-        dayIndex
+        dayIndex,
+        snapshot.cash,
+        calculateOwnerNetWorth(state, snapshot)
       )
     );
   }
@@ -64,7 +67,9 @@ export function recordHistorySnapshot(
         rival.finance.cashReserve,
         recordedMonth,
         rival.momentum,
-        dayIndex
+        dayIndex,
+        0,
+        0
       )
     );
   }
@@ -114,6 +119,10 @@ export function getHistoryMetricValue(
       return point.monthlyProfit;
     case "money":
       return point.money;
+    case "ownerCash":
+      return point.ownerCash;
+    case "ownerNetWorth":
+      return point.ownerNetWorth;
     case "rank":
       return point.rank;
     case "score":
@@ -170,7 +179,9 @@ function createHistoryPoint(
   money: number,
   month: number,
   momentum: number,
-  dayIndex: number
+  dayIndex: number,
+  ownerCash: number,
+  ownerNetWorth: number
 ): ParkHistoryPoint {
   return {
     dayIndex,
@@ -181,6 +192,8 @@ function createHistoryPoint(
     companyValue: Math.round(entry.companyValue),
     monthlyProfit: Math.round(entry.monthlyProfit),
     money: Math.round(money),
+    ownerCash: Math.round(ownerCash),
+    ownerNetWorth: Math.round(ownerNetWorth),
     momentum: roundTo(momentum, 2),
   };
 }

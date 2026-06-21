@@ -22,20 +22,22 @@ import {
   acceptBoardProposal,
   declineBoardProposal,
 } from "../domain/governance";
+import { normalizeDifficultyPreset } from "../domain/difficulty";
 import {
   buyInvestmentByRivalId,
   refreshInvestmentSummary,
   sellInvestmentByRivalId,
 } from "../domain/investments";
 import {
-  applyOwnerCashDelta,
   createInitialOwnerState,
   migrateLegacyOwnerCash,
+  recordOwnerCashFlowSummary,
 } from "../domain/owner";
 import {
   createInitialPlayerActionState,
   launchPlayerLeagueAction,
 } from "../domain/playerActions";
+import { createInitialObjectiveState } from "../domain/objectives";
 import { createInitialPrestigeState } from "../domain/prestige";
 import { createInitialRivalChallengeState } from "../domain/rivalry";
 import {
@@ -44,8 +46,8 @@ import {
 } from "../domain/watchlist";
 import { denormalizeGameMoney } from "../domain/currency";
 import { roundTo } from "../domain/math";
-import { readPlayerSnapshot } from "../domain/player";
-import { appendGeneratedRivals } from "../domain/rivals";
+import { calculatePlayerScore, readPlayerSnapshot } from "../domain/player";
+import { appendGeneratedRivals, computeRivalScore } from "../domain/rivals";
 import {
   createInitialStateAtDay,
   simulateLivePulse,
@@ -57,6 +59,8 @@ import type {
   ParkHistoryPoint,
   MonthlySimulationResult,
   PlayerLeagueActionState,
+  PlayerObjective,
+  PlayerObjectiveState,
   PlayerRivalChallenge,
   PlayerPrestigeState,
   PlayerLeagueActionType,
@@ -64,6 +68,7 @@ import type {
   PlayerRivalChallengeState,
   PlayerWatchlistState,
   SimulationConfig,
+  DifficultyPreset,
   PlayerDirective,
   PlayerSnapshot,
   RegionKey,
@@ -75,6 +80,11 @@ import type {
 
 function getStorage(): Configuration {
   return context.getParkStorage();
+}
+
+export function peekStoredState(): WorldParkLeagueState | null {
+  const rawState = getStorage().get(STORAGE_KEY);
+  return isValidState(rawState) ? rawState : null;
 }
 
 export function ensureState(snapshot: PlayerSnapshot = readPlayerSnapshot()): WorldParkLeagueState {
@@ -147,8 +157,19 @@ export function resetState(snapshot: PlayerSnapshot = readPlayerSnapshot()): Wor
     snapshot.currentDayIndex,
     snapshot.parkName
   );
+  calibrateRivalsForSnapshot(freshState, snapshot);
   saveState(freshState);
   return freshState;
+}
+
+export function setDifficultyPreset(
+  preset: DifficultyPreset,
+  snapshot: PlayerSnapshot = readPlayerSnapshot()
+): WorldParkLeagueState {
+  const { state } = syncStateToCurrentMonth(snapshot);
+  state.config.difficultyPreset = preset;
+  saveState(state);
+  return state;
 }
 
 export function triggerDebugSpotlight(
@@ -236,7 +257,7 @@ export function buyInvestmentForRival(
   const result = buyInvestmentByRivalId(
     state,
     rivalId,
-    state.player.owner.cash,
+    liveSnapshot.cash,
     liveSnapshot.currentMonth,
     share
   );
@@ -244,7 +265,8 @@ export function buyInvestmentForRival(
     return { state: result.state, ok: false, message: result.message };
   }
 
-  applyOwnerCashDelta(result.state, result.cashDelta, result.message);
+  applyParkCashDelta(result.cashDelta);
+  recordOwnerCashFlowSummary(result.state, result.message, 0);
   saveState(result.state);
   return { state: result.state, ok: true, message: result.message };
 }
@@ -277,7 +299,8 @@ export function sellInvestmentForRival(
     return { state: result.state, ok: false, message: result.message };
   }
 
-  applyOwnerCashDelta(result.state, result.cashDelta, result.message);
+  applyParkCashDelta(result.cashDelta);
+  recordOwnerCashFlowSummary(result.state, result.message, 0);
   saveState(result.state);
   return { state: result.state, ok: true, message: result.message };
 }
@@ -414,6 +437,7 @@ export function migrateState(
     snapshot.parkName
   );
   if (!isObjectLike(value)) {
+    calibrateRivalsForSnapshot(freshState, snapshot);
     return freshState;
   }
 
@@ -421,6 +445,7 @@ export function migrateState(
   const sourceSchemaVersion =
     typeof candidate.schemaVersion === "number" ? candidate.schemaVersion : 0;
   if (!candidate.world || !candidate.player || !candidate.config) {
+    calibrateRivalsForSnapshot(freshState, snapshot);
     return freshState;
   }
 
@@ -612,9 +637,15 @@ export function migrateState(
       actions: normalizeActions(candidate.player.actions, freshState.player.actions),
       watchlist: normalizeWatchlist(candidate.player.watchlist, freshState.player.watchlist),
       rivalry: normalizeRivalry(candidate.player.rivalry, freshState.player.rivalry),
+      objectives: normalizeObjectives(candidate.player.objectives, freshState.player.objectives),
       prestige: normalizePrestige(candidate.player.prestige, freshState.player.prestige),
     },
   };
+
+  if (sourceSchemaVersion < 24) {
+    merged.config.difficultyPreset = freshState.config.difficultyPreset;
+    calibrateRivalsForSnapshot(merged, snapshot);
+  }
 
   if (sourceSchemaVersion < 20) {
     merged.config.dominantLeadThreshold = freshState.config.dominantLeadThreshold;
@@ -652,7 +683,7 @@ export function migrateState(
   refreshInvestmentSummary(merged, merged.player.investmentSummary.lastMonthCashDelta);
   merged.player.prestige.records.peakMoney = Math.max(
     merged.player.prestige.records.peakMoney,
-    merged.player.owner.cash
+    snapshot.cash
   );
   return merged;
 }
@@ -678,6 +709,57 @@ function isObjectLike(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object";
 }
 
+function calibrateRivalsForSnapshot(
+  state: WorldParkLeagueState,
+  snapshot: PlayerSnapshot
+): void {
+  const playerScore = calculatePlayerScore(snapshot);
+  if (playerScore < 68 || state.world.rivals.length === 0) {
+    return;
+  }
+
+  const activeRivals = state.world.rivals
+    .filter((rival) => rival.status.active)
+    .sort((left, right) => right.derived.score - left.derived.score)
+    .slice(0, 14);
+  const playerValue = Math.max(350_000, snapshot.companyValue || snapshot.parkValue);
+
+  for (let index = 0; index < activeRivals.length; index += 1) {
+    const rival = activeRivals[index];
+    if (!rival) {
+      continue;
+    }
+
+    const desiredScore = playerScore + 8 - index * 0.85;
+    const currentScore = computeRivalScore(rival, state.world.competitionHeat);
+    if (currentScore >= desiredScore) {
+      continue;
+    }
+
+    const lift = Math.min(18, desiredScore - currentScore);
+    rival.stats.prestige = clampNumber(rival.stats.prestige + lift * 0.95, 20, 99);
+    rival.stats.operations = clampNumber(rival.stats.operations + lift * 0.7, 20, 99);
+    rival.stats.marketing = clampNumber(rival.stats.marketing + lift * 0.9, 20, 99);
+    rival.stats.innovation = clampNumber(rival.stats.innovation + lift * 0.65, 20, 99);
+    rival.stats.guestAppeal = clampNumber(rival.stats.guestAppeal + lift * 1.05, 20, 99);
+    rival.momentum = clampNumber(rival.momentum + lift * 0.18, -14, 14);
+    rival.finance.companyValue = Math.max(
+      rival.finance.companyValue,
+      Math.round(playerValue * clampNumber(1.35 - index * 0.035, 0.86, 1.35))
+    );
+    rival.finance.cashReserve = Math.max(
+      rival.finance.cashReserve,
+      Math.round(80_000 + playerValue * clampNumber(0.05 - index * 0.0015, 0.02, 0.05))
+    );
+    rival.finance.monthlyProfit = Math.max(
+      rival.finance.monthlyProfit,
+      Math.round(Math.max(8_000, snapshot.lastMonthOperatingProfit * clampNumber(1.1 - index * 0.03, 0.42, 1.1)))
+    );
+    rival.derived.score = roundTo(computeRivalScore(rival, state.world.competitionHeat), 2);
+    rival.derived.valuation = rival.finance.companyValue;
+  }
+}
+
 function normalizeConfig(
   source: unknown,
   fallback: SimulationConfig
@@ -689,6 +771,7 @@ function normalizeConfig(
   return {
     ...fallback,
     ...source,
+    difficultyPreset: normalizeDifficultyPreset(source.difficultyPreset),
     rivalCount:
       typeof source.rivalCount === "number"
         ? Math.max(fallback.rivalCount, Math.round(source.rivalCount))
@@ -705,6 +788,22 @@ function normalizeConfig(
       typeof source.maxCatchUpPressure === "number"
         ? source.maxCatchUpPressure
         : fallback.maxCatchUpPressure,
+    catchUpPlayerDominanceScale:
+      typeof source.catchUpPlayerDominanceScale === "number"
+        ? clampNumber(source.catchUpPlayerDominanceScale, 0.3, 1.2)
+        : fallback.catchUpPlayerDominanceScale,
+    catchUpPlayerGrowthScale:
+      typeof source.catchUpPlayerGrowthScale === "number"
+        ? clampNumber(source.catchUpPlayerGrowthScale, 0, 0.04)
+        : fallback.catchUpPlayerGrowthScale,
+    catchUpTenureScale:
+      typeof source.catchUpTenureScale === "number"
+        ? clampNumber(source.catchUpTenureScale, 0.002, 0.02)
+        : fallback.catchUpTenureScale,
+    catchUpLocalRivalScale:
+      typeof source.catchUpLocalRivalScale === "number"
+        ? clampNumber(source.catchUpLocalRivalScale, 0.5, 1.8)
+        : fallback.catchUpLocalRivalScale,
     mergerChance:
       typeof source.mergerChance === "number" ? source.mergerChance : fallback.mergerChance,
     challengerChance:
@@ -739,13 +838,29 @@ function normalizeConfig(
       typeof source.breakoutGuestMultiplier === "number"
         ? clampNumber(source.breakoutGuestMultiplier, 1, 2.5)
         : fallback.breakoutGuestMultiplier,
+    guestCapRankScale:
+      typeof source.guestCapRankScale === "number"
+        ? clampNumber(source.guestCapRankScale, 0.08, 0.3)
+        : fallback.guestCapRankScale,
+    guestCapShareScale:
+      typeof source.guestCapShareScale === "number"
+        ? clampNumber(source.guestCapShareScale, 0.3, 0.8)
+        : fallback.guestCapShareScale,
+    guestCapAwardBonus:
+      typeof source.guestCapAwardBonus === "number"
+        ? clampNumber(source.guestCapAwardBonus, 0, 0.08)
+        : fallback.guestCapAwardBonus,
+    guestCapUpperClamp:
+      typeof source.guestCapUpperClamp === "number"
+        ? clampNumber(source.guestCapUpperClamp, 1, 1.4)
+        : fallback.guestCapUpperClamp,
     investmentSaleMultiplier:
       typeof source.investmentSaleMultiplier === "number"
-        ? clampNumber(source.investmentSaleMultiplier, 0.55, 1.05)
+        ? clampNumber(source.investmentSaleMultiplier, 0.45, 1.05)
         : fallback.investmentSaleMultiplier,
     investmentDividendMultiplier:
       typeof source.investmentDividendMultiplier === "number"
-        ? clampNumber(source.investmentDividendMultiplier, 0.45, 1.05)
+        ? clampNumber(source.investmentDividendMultiplier, 0.3, 1.05)
         : fallback.investmentDividendMultiplier,
     prestigeRewardCashMultiplier:
       typeof source.prestigeRewardCashMultiplier === "number"
@@ -891,6 +1006,10 @@ function normalizeHistory(
           monthlyProfit:
             typeof point.monthlyProfit === "number" ? Math.round(point.monthlyProfit) : 0,
           money: typeof point.money === "number" ? Math.round(point.money) : 0,
+          ownerCash:
+            typeof point.ownerCash === "number" ? Math.round(point.ownerCash) : 0,
+          ownerNetWorth:
+            typeof point.ownerNetWorth === "number" ? Math.round(point.ownerNetWorth) : 0,
           momentum: typeof point.momentum === "number" ? point.momentum : 0,
         };
       })
@@ -1253,6 +1372,109 @@ function normalizeWatchlist(
   };
 }
 
+function normalizeObjectives(
+  source: unknown,
+  fallback: PlayerObjectiveState
+): PlayerObjectiveState {
+  if (!isObjectLike(source)) {
+    return createInitialObjectiveState();
+  }
+
+  const activeObjective: PlayerObjective | null = isObjectLike(source.activeObjective)
+    ? {
+        id:
+          typeof source.activeObjective.id === "string"
+            ? source.activeObjective.id
+            : "legacy-objective",
+        type:
+          source.activeObjective.type === "guest_growth" ||
+          source.activeObjective.type === "rating_hold" ||
+          source.activeObjective.type === "profit_push" ||
+          source.activeObjective.type === "ride_expansion"
+            ? source.activeObjective.type
+            : "guest_growth",
+        title:
+          typeof source.activeObjective.title === "string"
+            ? source.activeObjective.title
+            : "League objective",
+        summary:
+          typeof source.activeObjective.summary === "string"
+            ? source.activeObjective.summary
+            : "Legacy objective migrated into the latest schema.",
+        issuedAtDayIndex:
+          typeof source.activeObjective.issuedAtDayIndex === "number"
+            ? Math.max(0, Math.round(source.activeObjective.issuedAtDayIndex))
+            : 0,
+        resolveAtDayIndex:
+          typeof source.activeObjective.resolveAtDayIndex === "number"
+            ? Math.max(0, Math.round(source.activeObjective.resolveAtDayIndex))
+            : 0,
+        baselineGuests:
+          typeof source.activeObjective.baselineGuests === "number"
+            ? Math.max(0, Math.round(source.activeObjective.baselineGuests))
+            : 0,
+        baselineRating:
+          typeof source.activeObjective.baselineRating === "number"
+            ? Math.max(0, Math.round(source.activeObjective.baselineRating))
+            : 0,
+        baselineProfit:
+          typeof source.activeObjective.baselineProfit === "number"
+            ? Math.round(source.activeObjective.baselineProfit)
+            : 0,
+        baselineOpenRideCount:
+          typeof source.activeObjective.baselineOpenRideCount === "number"
+            ? Math.max(0, Math.round(source.activeObjective.baselineOpenRideCount))
+            : 0,
+        targetGuests:
+          typeof source.activeObjective.targetGuests === "number"
+            ? Math.max(0, Math.round(source.activeObjective.targetGuests))
+            : 0,
+        targetRating:
+          typeof source.activeObjective.targetRating === "number"
+            ? Math.max(0, Math.round(source.activeObjective.targetRating))
+            : 0,
+        targetProfit:
+          typeof source.activeObjective.targetProfit === "number"
+            ? Math.round(source.activeObjective.targetProfit)
+            : 0,
+        targetOpenRideCount:
+          typeof source.activeObjective.targetOpenRideCount === "number"
+            ? Math.max(0, Math.round(source.activeObjective.targetOpenRideCount))
+            : 0,
+        rewardCash:
+          typeof source.activeObjective.rewardCash === "number"
+            ? Math.max(0, Math.round(source.activeObjective.rewardCash))
+            : 0,
+        penaltyCash:
+          typeof source.activeObjective.penaltyCash === "number"
+            ? Math.max(0, Math.round(source.activeObjective.penaltyCash))
+            : 0,
+      }
+    : null;
+
+  return {
+    ...fallback,
+    ...source,
+    activeObjective,
+    cooldownDaysRemaining:
+      typeof source.cooldownDaysRemaining === "number"
+        ? Math.max(0, Math.round(source.cooldownDaysRemaining))
+        : fallback.cooldownDaysRemaining,
+    completedObjectives:
+      typeof source.completedObjectives === "number"
+        ? Math.max(0, Math.round(source.completedObjectives))
+        : fallback.completedObjectives,
+    failedObjectives:
+      typeof source.failedObjectives === "number"
+        ? Math.max(0, Math.round(source.failedObjectives))
+        : fallback.failedObjectives,
+    lastObjectiveSummary:
+      typeof source.lastObjectiveSummary === "string"
+        ? source.lastObjectiveSummary
+        : fallback.lastObjectiveSummary,
+  };
+}
+
 function normalizeRivalry(
   source: unknown,
   fallback: PlayerRivalChallengeState
@@ -1325,6 +1547,12 @@ function normalizeRivalry(
           typeof source.activeChallenge.rewardCash === "number"
             ? Math.max(0, Math.round(source.activeChallenge.rewardCash))
             : 0,
+        penaltyCash:
+          typeof source.activeChallenge.penaltyCash === "number"
+            ? Math.max(0, Math.round(source.activeChallenge.penaltyCash))
+            : typeof source.activeChallenge.rewardCash === "number"
+              ? Math.round(Math.max(0, source.activeChallenge.rewardCash) * 0.65)
+              : 0,
         rewardBoostType:
           source.activeChallenge.rewardBoostType === "featured" ||
           source.activeChallenge.rewardBoostType === "buzz"

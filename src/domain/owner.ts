@@ -66,39 +66,27 @@ export function recordOwnerCashFlowSummary(
   summary: string | null,
   lastCashFlow: number = 0
 ): void {
+  if (summary === null && lastCashFlow === 0) {
+    return;
+  }
+
   state.player.owner.lastCashFlow = Math.round(lastCashFlow);
-  state.player.owner.lastCashFlowSummary = summary;
+  if (summary !== null) {
+    state.player.owner.lastCashFlowSummary = summary;
+  }
 }
 
 export function settleOwnerFinanceForMonth(
   state: WorldParkLeagueState,
   snapshot: PlayerSnapshot
 ): OwnerFinanceUpdate {
-  const salary = calculateOwnerSalary(state, snapshot);
-  if (salary <= 0) {
-    state.player.owner.lastSalary = 0;
-    state.player.owner.lastCashFlow = 0;
-    state.player.owner.lastCashFlowSummary = "No owner salary this month.";
-    return {
-      cashDelta: 0,
-      salary: 0,
-      summary: state.player.owner.lastCashFlowSummary,
-      notifications: [],
-    };
-  }
-
-  state.player.owner.lastSalary = salary;
-  state.player.owner.totalSalaryReceived += salary;
-  state.player.owner.cash = Math.max(0, Math.round(state.player.owner.cash + salary));
-  state.player.owner.lastCashFlow = salary;
-  state.player.owner.lifetimeNetCashFlow += salary;
-  state.player.owner.lastCashFlowSummary = `Board salary paid: ${salary.toLocaleString("en-US")}.`;
-
+  void state;
+  void snapshot;
   return {
-    cashDelta: salary,
-    salary,
-    summary: state.player.owner.lastCashFlowSummary,
-    notifications: [`Board salary received: ${salary.toLocaleString("en-US")}.`],
+    cashDelta: 0,
+    salary: 0,
+    summary: null,
+    notifications: [],
   };
 }
 
@@ -110,7 +98,7 @@ export function calculateOwnerNetWorth(
   const controlledParkValue = calculatePlayerEquityValue(snapshot) * ownerParkShare;
   return Math.max(
     0,
-    Math.round(state.player.owner.cash + state.player.investmentSummary.portfolioValue + controlledParkValue)
+    Math.round(state.player.investmentSummary.portfolioValue + controlledParkValue)
   );
 }
 

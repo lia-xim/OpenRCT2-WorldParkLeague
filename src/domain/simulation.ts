@@ -15,15 +15,19 @@ import {
 } from "../config";
 import { advancePlayerEquityMarket, createInitialEquityState } from "./equity";
 import { formatCompactMoney } from "./currency";
+import { getDifficultyProfile } from "./difficulty";
 import { advancePlayerGovernance, createInitialGovernanceState } from "./governance";
 import { recordHistoryMarkers, recordHistorySnapshot } from "./history";
 import { refreshInvestmentSummary, settleInvestmentsForMonth } from "./investments";
 import {
-  applyOwnerCashDelta,
   createInitialOwnerState,
   recordOwnerCashFlowSummary,
-  settleOwnerFinanceForMonth,
 } from "./owner";
+import {
+  advancePlayerObjective,
+  createInitialObjectiveState,
+  maybeStartPlayerObjective,
+} from "./objectives";
 import {
   advancePlayerActionsForDay,
   createInitialPlayerActionState,
@@ -43,6 +47,7 @@ import { createScopedRng, hashString } from "./random";
 import {
   advanceRivalChallenge,
   createInitialRivalChallengeState,
+  getPrimaryRivalSummary,
   maybeStartRivalChallenge,
 } from "./rivalry";
 import type {
@@ -169,6 +174,7 @@ export function createInitialStateAtDay(
       actions: createInitialPlayerActionState(),
       watchlist: createInitialWatchlistState(),
       rivalry: createInitialRivalChallengeState(),
+      objectives: createInitialObjectiveState(),
       prestige: createInitialPrestigeState(),
     },
   };
@@ -182,7 +188,7 @@ export function simulateMonth(
   const nextState = deepClone(state);
   const headlines: NewsItem[] = [];
   const playerNotifications: string[] = [];
-  let challengeCashDelta = 0;
+  let parkRewardCashDelta = 0;
   const rng = createScopedRng(nextState.world.seed, month, nextState.world.rivals.length);
 
   nextState.player.parkName = playerSnapshot.parkName;
@@ -267,11 +273,15 @@ export function simulateMonth(
   const playerScore = calculatePlayerScore(playerSnapshot);
   const playerActionEffects = getPlayerActionEffects(nextState);
   const prestigeRewardEffects = getPrestigeRewardEffects(nextState);
+  const effectivePlayerScore = applyPlayerLeaguePressure(
+    nextState,
+    playerScore + playerActionEffects.scoreBonus + prestigeRewardEffects.scoreBonus
+  );
   nextState.player.liveMomentum = calculatePlayerLiveMomentum(nextState, playerSnapshot, playerScore);
   const leaderboard = buildLeaderboard(
     nextState,
     playerSnapshot,
-    playerScore + playerActionEffects.scoreBonus + prestigeRewardEffects.scoreBonus,
+    effectivePlayerScore,
     nextState.player.liveMomentum
   );
   nextState.world.leaderboard = leaderboard;
@@ -281,7 +291,7 @@ export function simulateMonth(
   nextState.player.previousScore = nextState.player.score;
   nextState.player.currentRank = playerEntry?.rank ?? null;
   nextState.player.score = roundTo(
-    playerScore + playerActionEffects.scoreBonus + prestigeRewardEffects.scoreBonus,
+    effectivePlayerScore,
     2
   );
   nextState.player.marketShare = playerEntry?.marketShare ?? 0;
@@ -301,7 +311,7 @@ export function simulateMonth(
     )
   );
   const challengeResolution = advanceRivalChallenge(nextState, playerSnapshot, month * DAYS_PER_MONTH);
-  challengeCashDelta += challengeResolution.cashDelta;
+  parkRewardCashDelta += challengeResolution.cashDelta;
   playerNotifications.push(...challengeResolution.notifications);
   headlines.push(...challengeResolution.headlines.map((item) =>
     createNews(
@@ -314,6 +324,16 @@ export function simulateMonth(
     )
   ));
   playerNotifications.push(...maybeStartRivalChallenge(nextState, month * DAYS_PER_MONTH, comparisonRivalId(nextState)));
+  const objectiveResolution = advancePlayerObjective(nextState, playerSnapshot, month * DAYS_PER_MONTH);
+  parkRewardCashDelta += objectiveResolution.cashDelta;
+  playerNotifications.push(...objectiveResolution.notifications);
+  headlines.push(...objectiveResolution.headlines);
+  playerNotifications.push(...maybeStartPlayerObjective(nextState, playerSnapshot, month * DAYS_PER_MONTH));
+  const pressureCampaign = maybeTriggerRivalPressureCampaign(nextState, month);
+  if (pressureCampaign) {
+    headlines.push(pressureCampaign.news);
+    playerNotifications.push(pressureCampaign.notification);
+  }
 
   decrementAwardDurations(nextState);
   const awardNews = maybeGrantYearlyAward(nextState, month);
@@ -333,9 +353,6 @@ export function simulateMonth(
   const equityResult = advancePlayerEquityMarket(nextState, playerSnapshot, month);
   headlines.push(...equityResult.news);
   playerNotifications.push(...equityResult.notifications);
-  const ownerFinance = settleOwnerFinanceForMonth(nextState, playerSnapshot);
-  playerNotifications.push(...ownerFinance.notifications);
-
   nextState.player.guestCapModifier = roundTo(
     clamp(
       calculateGuestCapModifier(
@@ -344,7 +361,8 @@ export function simulateMonth(
         nextState.player.marketShare,
         nextState.player.activeAwardMonthsRemaining,
         nextState.world.economyIndex,
-        nextState.world.tourismIndex
+        nextState.world.tourismIndex,
+        nextState.config
       ) *
         getPlayerSpotlightGuestMultiplier(nextState) *
         nextState.player.governance.guestCapImpact *
@@ -359,20 +377,21 @@ export function simulateMonth(
   recordHistoryMarkers(nextState, headlines, month * DAYS_PER_MONTH);
   const prestigeUpdate = updatePrestigeProgress(nextState, playerSnapshot, headlines);
   playerNotifications.push(...prestigeUpdate.notifications);
-  const ownerRewardCashDelta = settlement.cashDelta + prestigeUpdate.cashDelta + challengeCashDelta;
-  if (ownerRewardCashDelta !== 0) {
-    applyOwnerCashDelta(nextState, ownerRewardCashDelta);
+  parkRewardCashDelta += settlement.cashDelta + prestigeUpdate.cashDelta;
+  if (parkRewardCashDelta !== 0) {
+    playerNotifications.push(
+      `League cashflow changed park cash by ${formatSignedMoneyCompact(parkRewardCashDelta)}.`
+    );
   }
-  const totalOwnerCashDelta = ownerFinance.cashDelta + ownerRewardCashDelta;
   recordOwnerCashFlowSummary(
     nextState,
     buildOwnerCashFlowSummary(
-      ownerFinance.cashDelta,
+      0,
       settlement.cashDelta,
       prestigeUpdate.cashDelta,
-      challengeCashDelta
+      challengeResolution.cashDelta
     ),
-    totalOwnerCashDelta
+    0
   );
   advanceSpotlightDebugOverride(nextState, DAYS_PER_MONTH);
 
@@ -386,8 +405,8 @@ export function simulateMonth(
     nextState,
     month,
     headlines,
-    parkCashDelta: 0,
-    ownerCashDelta: totalOwnerCashDelta,
+    parkCashDelta: parkRewardCashDelta,
+    ownerCashDelta: 0,
     playerNotifications,
   };
 }
@@ -400,7 +419,7 @@ export function simulateLivePulse(
   const nextState = deepClone(state);
   const headlines: NewsItem[] = [];
   const playerNotifications: string[] = [];
-  let challengeCashDelta = 0;
+  let parkRewardCashDelta = 0;
   const rng = createScopedRng(nextState.world.seed, dayIndex, 9201);
   const priorRank = nextState.player.currentRank;
   const priorScore = nextState.player.score;
@@ -472,11 +491,15 @@ export function simulateLivePulse(
   const playerScore = calculatePlayerScore(playerSnapshot);
   const playerActionEffects = getPlayerActionEffects(nextState);
   const prestigeRewardEffects = getPrestigeRewardEffects(nextState);
+  const effectivePlayerScore = applyPlayerLeaguePressure(
+    nextState,
+    playerScore + playerActionEffects.scoreBonus + prestigeRewardEffects.scoreBonus
+  );
   nextState.player.liveMomentum = calculatePlayerLiveMomentum(nextState, playerSnapshot, playerScore);
   const leaderboard = buildLeaderboard(
     nextState,
     playerSnapshot,
-    playerScore + playerActionEffects.scoreBonus + prestigeRewardEffects.scoreBonus,
+    effectivePlayerScore,
     nextState.player.liveMomentum
   );
   nextState.world.leaderboard = leaderboard;
@@ -486,7 +509,7 @@ export function simulateLivePulse(
   nextState.player.previousScore = nextState.player.score;
   nextState.player.currentRank = playerEntry?.rank ?? null;
   nextState.player.score = roundTo(
-    playerScore + playerActionEffects.scoreBonus + prestigeRewardEffects.scoreBonus,
+    effectivePlayerScore,
     2
   );
   nextState.player.marketShare = playerEntry?.marketShare ?? 0;
@@ -508,7 +531,7 @@ export function simulateLivePulse(
     )
   );
   const challengeResolution = advanceRivalChallenge(nextState, playerSnapshot, dayIndex);
-  challengeCashDelta += challengeResolution.cashDelta;
+  parkRewardCashDelta += challengeResolution.cashDelta;
   playerNotifications.push(...challengeResolution.notifications);
   headlines.push(...challengeResolution.headlines.map((item) =>
     createNews(
@@ -521,6 +544,11 @@ export function simulateLivePulse(
     )
   ));
   playerNotifications.push(...maybeStartRivalChallenge(nextState, dayIndex, comparisonRivalId(nextState)));
+  const objectiveResolution = advancePlayerObjective(nextState, playerSnapshot, dayIndex);
+  parkRewardCashDelta += objectiveResolution.cashDelta;
+  playerNotifications.push(...objectiveResolution.notifications);
+  headlines.push(...objectiveResolution.headlines);
+  playerNotifications.push(...maybeStartPlayerObjective(nextState, playerSnapshot, dayIndex));
   nextState.player.guestCapModifier = roundTo(
     clamp(
       calculateGuestCapModifier(
@@ -529,7 +557,8 @@ export function simulateLivePulse(
         nextState.player.marketShare,
         nextState.player.activeAwardMonthsRemaining,
         nextState.world.economyIndex,
-        nextState.world.tourismIndex
+        nextState.world.tourismIndex,
+        nextState.config
       ) *
         getPlayerSpotlightGuestMultiplier(nextState) *
         nextState.player.governance.guestCapImpact *
@@ -544,14 +573,16 @@ export function simulateLivePulse(
   recordHistoryMarkers(nextState, headlines, dayIndex);
   const prestigeUpdate = updatePrestigeProgress(nextState, playerSnapshot, headlines);
   playerNotifications.push(...prestigeUpdate.notifications);
-  const totalOwnerCashDelta = prestigeUpdate.cashDelta + challengeCashDelta;
-  if (totalOwnerCashDelta !== 0) {
-    applyOwnerCashDelta(nextState, totalOwnerCashDelta);
+  parkRewardCashDelta += prestigeUpdate.cashDelta;
+  if (parkRewardCashDelta !== 0) {
+    playerNotifications.push(
+      `League cashflow changed park cash by ${formatSignedMoneyCompact(parkRewardCashDelta)}.`
+    );
   }
   recordOwnerCashFlowSummary(
     nextState,
-    buildOwnerCashFlowSummary(0, 0, prestigeUpdate.cashDelta, challengeCashDelta),
-    totalOwnerCashDelta
+    buildOwnerCashFlowSummary(0, 0, prestigeUpdate.cashDelta, challengeResolution.cashDelta),
+    0
   );
   advanceSpotlightDebugOverride(nextState, Math.max(1, nextState.config.livePulseIntervalDays));
   nextState.lastLivePulseDayIndex = dayIndex;
@@ -584,8 +615,8 @@ export function simulateLivePulse(
     nextState,
     dayIndex,
     headlines,
-    parkCashDelta: 0,
-    ownerCashDelta: totalOwnerCashDelta,
+    parkCashDelta: parkRewardCashDelta,
+    ownerCashDelta: 0,
     playerNotifications,
   };
 }
@@ -611,6 +642,62 @@ function buildOwnerCashFlowSummary(
   }
 
   return parts.length > 0 ? parts.join(" | ") : null;
+}
+
+function maybeTriggerRivalPressureCampaign(
+  state: WorldParkLeagueState,
+  month: number
+): { news: NewsItem; notification: string } | null {
+  const rank = state.player.currentRank ?? 999;
+  const summary = getPrimaryRivalSummary(state, comparisonRivalId(state));
+  if (!summary || rank > 10) {
+    return null;
+  }
+
+  const rng = createScopedRng(state.world.seed, month, 7193, rank);
+  const difficulty = getDifficultyProfile(state.config.difficultyPreset);
+  const baseChance = rank === 1 ? 0.16 : rank <= 3 ? 0.12 : rank <= 5 ? 0.09 : 0.055;
+  const rivalryBonus = summary.isLocalRival ? 0.035 : summary.isWatched ? 0.018 : 0;
+  if (!rng.chance((baseChance + rivalryBonus) * difficulty.rivalPressureChanceScale)) {
+    return null;
+  }
+
+  const intensity =
+    (rank === 1 ? 1.25 : rank <= 3 ? 1.05 : 0.9) * difficulty.rivalPressureImpactScale;
+  state.world.competitionHeat = clamp(
+    state.world.competitionHeat + 0.026 * intensity,
+    0.9,
+    1.24
+  );
+  state.player.governance.investorConfidence = clamp(
+    state.player.governance.investorConfidence - 0.035 * intensity,
+    0.35,
+    1.35
+  );
+  state.player.governance.boardPatience = clamp(
+    state.player.governance.boardPatience - 0.028 * intensity,
+    0.35,
+    1.35
+  );
+  state.player.liveMomentum = roundTo(
+    clamp(state.player.liveMomentum - 0.8 * intensity, -14, 14),
+    2
+  );
+  state.player.governance.lastReviewSummary = `${summary.rivalName} is pressuring your market position.`;
+
+  const news = createNews(
+    month,
+    "rival",
+    "warning",
+    `${summary.rivalName} launches a pressure campaign against your park.`,
+    "Discounts, ads and investor whispers are making the climb harder. Board patience, investor confidence and league momentum take a short-term hit.",
+    summary.rivalId
+  );
+
+  return {
+    news,
+    notification: `${summary.rivalName} pressure campaign: board patience, investors and momentum took a hit.`,
+  };
 }
 
 function rollWorldEvent(state: WorldParkLeagueState, month: number): NewsItem | null {
@@ -1440,11 +1527,54 @@ function computeCatchUpPressure(
       : 0;
   const ambition = clamp((rival.tier - 2) * 0.04 + rival.stats.innovation * 0.0008, 0.02, 0.13);
   const slumpRelief = rival.status.monthsInSlump >= 3 ? 0.035 : 0;
-  const tenurePressure = Math.max(0, priorMonthsAtRankOne - 1) * 0.006;
-  const localRivalPressure = computeLocalRivalPressure(rival.id, state);
-  const pressure = playerDominance * 0.62 + tenurePressure + ambition + slumpRelief + localRivalPressure;
+  const tenurePressure = Math.max(0, priorMonthsAtRankOne - 1) * state.config.catchUpTenureScale;
+  const localRivalPressure =
+    computeLocalRivalPressure(rival.id, state) * state.config.catchUpLocalRivalScale;
+  const playerGrowthPressure = computePlayerGrowthPressure(rival.id, state);
+  const difficulty = getDifficultyProfile(state.config.difficultyPreset);
+  const pressure =
+    (playerDominance * state.config.catchUpPlayerDominanceScale +
+      playerGrowthPressure +
+      tenurePressure +
+      ambition +
+      slumpRelief +
+      localRivalPressure) *
+    difficulty.rivalCatchUpScale;
 
   return clamp(pressure, 0, state.config.maxCatchUpPressure);
+}
+
+function computePlayerGrowthPressure(rivalId: string, state: WorldParkLeagueState): number {
+  const momentumSignal = Math.max(0, state.player.liveMomentum - 1.2);
+  if (momentumSignal <= 0) {
+    return 0;
+  }
+
+  const playerEntry = state.world.leaderboard.find((entry) => entry.isPlayer);
+  const rivalEntry = state.world.leaderboard.find((entry) => entry.parkId === rivalId);
+  let proximityScale = 0.55;
+  if (playerEntry && rivalEntry) {
+    const rankGap = Math.abs(rivalEntry.rank - playerEntry.rank);
+    if (rankGap <= 3) {
+      proximityScale = 1.2;
+    } else if (rankGap <= 10) {
+      proximityScale = 1;
+    } else if (rankGap <= 20) {
+      proximityScale = 0.72;
+    }
+  }
+
+  if (state.player.watchlist.focusRivalIds.includes(rivalId)) {
+    proximityScale += 0.35;
+  } else if (state.player.watchlist.watchedRivalIds.includes(rivalId)) {
+    proximityScale += 0.16;
+  }
+
+  return clamp(
+    momentumSignal * state.config.catchUpPlayerGrowthScale * proximityScale,
+    0,
+    0.14
+  );
 }
 
 function computeLocalRivalPressure(rivalId: string, state: WorldParkLeagueState): number {
@@ -2095,6 +2225,29 @@ function buildLeaderboard(
   });
 
   return leaderboard;
+}
+
+function applyPlayerLeaguePressure(
+  state: WorldParkLeagueState,
+  rawPlayerScore: number
+): number {
+  const rank = state.player.currentRank ?? 999;
+  if (rank > 3) {
+    return rawPlayerScore;
+  }
+
+  const basePressure = rank === 1 ? 1.2 : rank === 2 ? 0.65 : 0.35;
+  const tenurePressure =
+    rank === 1 ? clamp(state.player.monthsAtRankOne * 0.28, 0, 6.8) : 0;
+  const awardPressure =
+    getPlayerSpotlightGuestMultiplier(state) > 1 ? 0.55 : 0;
+  const pressure = clamp(
+    (basePressure + tenurePressure + awardPressure) *
+      getDifficultyProfile(state.config.difficultyPreset).leaderPressureScale,
+    0,
+    9.5
+  );
+  return roundTo(clamp(rawPlayerScore - pressure, 12, 125), 2);
 }
 
 function getSpotlightScoreBonus(

@@ -11,7 +11,7 @@ Der Spieler soll das Gefuehl haben:
 - mein Park ist Teil einer echten Welt
 - Konkurrenzparks gewinnen Preise, fusionieren, wachsen oder scheitern
 - ich kann strategisch investieren statt nur lokal zu bauen
-- ich habe nicht nur eine Parkkasse, sondern auch eine persoenliche Eigentuemer-Ebene
+- Liga-Entscheidungen betreffen meine echte Parkkasse und damit meinen Baufortschritt
 - mein Erfolg beeinflusst, wie viele Gaeste ueberhaupt zu mir kommen
 - ich muss meine Spitzenposition verteidigen, weil die Konkurrenz staerker wird
 - es gibt ein echtes Midgame und Endgame statt nur lineares Wachstum
@@ -30,7 +30,7 @@ Der Spieler soll das Gefuehl haben:
 - Awards und Prestige
 - Marktgroesse und Marktanteile
 - Investments und Beteiligungen
-- spaeter persoenliche Finanzen, Salary und eine Eigentuemer-Perspektive auf Beteiligungen
+- optional spaeter komplexere Eigentuemer-/Brokerage-Systeme, aber nur wenn der Park-Cash-Kern stabil bleibt
 - Fusionen und Uebernahmen
 - Krisen, Skandale und Boom-Phasen
 - Catch-up-Mechaniken gegen statische Leaderboards

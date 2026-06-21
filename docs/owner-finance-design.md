@@ -1,8 +1,21 @@
 # Owner Finance und Investment-Architektur
 
-## Ziel dieser Notiz
+## Aktueller Stand nach Gameplay-Review
 
-Diese Datei haelt die Architekturentscheidung fuer die naechste groessere Wirtschaftswelle fest:
+Diese Datei dokumentiert den urspruenglichen Owner-Finance-Ansatz. Nach Live-Feedback wurde die Kernentscheidung fuer Version `0.22.0` bewusst geaendert:
+
+- Das Plugin nutzt weiterhin **kein zweites paralleles Investment-System**.
+- Rivalen-Investments bleiben ein einziges League-Portfolio.
+- Die relevanten Cashflows laufen aber wieder ueber die **Parkkasse**, nicht ueber separates Owner Cash.
+- Grund: separates Owner Cash war zwar sauber modellierbar, erzeugte aber zu wenig Spielspannung, weil Verluste und Gewinne den echten Parkbau kaum beeinflusst haben.
+- Kauf, Verkauf, Dividenden, Exits, Prestige-Cash und Rivalen-Challenge-Strafen betreffen deshalb die Parkkasse.
+- `owner`-State bleibt vorerst aus Save-Kompatibilitaetsgruenden als Legacy-/Summary-Struktur erhalten, ist aber nicht mehr die zentrale Gameplay-Wallet.
+
+Die folgenden Abschnitte bleiben als historische Designnotiz erhalten und beschreiben nicht mehr vollstaendig den aktuellen Runtime-Stand.
+
+## Ziel dieser historischen Notiz
+
+Die folgenden Abschnitte halten die fruehere Architekturidee fest:
 
 - wie wir persoenliche Finanzen einfuehren
 - wie wir das bestehende Investment-System umbauen
@@ -254,7 +267,7 @@ Diese Dinge sind nicht verboten, aber nicht der richtige naechste Scope.
 
 ## Offene Designfragen
 
-Diese Fragen muessen wir vor der Implementierung final beantworten:
+Diese Fragen gehoerten zum alten Owner-Finance-Scope und sind aktuell nicht Release-blockierend:
 
 1. Wie hoch ist das monatliche Owner Salary und wodurch wird es beeinflusst?
 2. Welche Rewards zahlen an `ownerCash` und welche an die Parkkasse?
@@ -262,14 +275,14 @@ Diese Fragen muessen wir vor der Implementierung final beantworten:
 4. Sollen Dividenden aus dem eigenen Park irgendwann auch owner-seitig modelliert werden?
 5. Wie streng trennen wir persoenliche und Park-seitige Rewards / Challenge-Payouts?
 
-## Aktuelle Empfehlung
+## Aktuelle Empfehlung nach Gameplay-Review
 
-Die beste naechste Implementierung ist:
+Die beste aktuelle Runtime-Loesung ist:
 
-1. bestehende Holdings zu Owner Holdings umdeuten
-2. `ownerCash` einfuehren
-3. Salary einfuehren
-4. Dividenden und Verkaufserloese auf `ownerCash` routen
-5. ein klares `Owner / Market`-UI bauen
+1. Rivalen-Holdings als ein einziges League-Portfolio behalten
+2. Kauf, Verkauf, Dividenden, Exits, Challenges und Prestige-Cash ueber die echte Parkkasse laufen lassen
+3. Keine zweite Owner-Cash-Wallet als Kernsystem verwenden
+4. `owner`-State nur noch als Legacy-/Summary-Struktur stabil halten
+5. Difficulty, Ziele, negative Investment-Events und Rivalen-Druck zuerst balancen
 
-Erst wenn das sauber, lesbar und balanciert ist, sollte ueber Margin oder Shorting gesprochen werden.
+Erst wenn der Park-Cash-Markt schwer genug, lesbar und stabil ist, sollte ueber Margin oder Shorting gesprochen werden.

@@ -12,7 +12,7 @@ import {
   WINDOW_CLASSIFICATION,
 } from "./config";
 import { readPlayerSnapshot } from "./domain/player";
-import { readState, syncStateToCurrentMonth } from "./state/repository";
+import { peekStoredState, readState, syncStateToCurrentMonth } from "./state/repository";
 import type {
   LivePulseResult,
   MonthlySimulationResult,
@@ -27,6 +27,7 @@ import { closeMainWindowIfOpen, openMainWindow, refreshMainWindow } from "./ui/w
 let lastAnnouncedMonth = Number.MIN_SAFE_INTEGER;
 let lastAnnouncedPulseDayIndex = Number.MIN_SAFE_INTEGER;
 let lastSpotlightBurstTick = Number.MIN_SAFE_INTEGER;
+let runtimeHooksRegistered = false;
 
 function announceSimulationResults(
   state: WorldParkLeagueState,
@@ -143,6 +144,12 @@ function applyDailyLeagueTick(): void {
 }
 
 function registerHooks(): void {
+  if (runtimeHooksRegistered) {
+    return;
+  }
+
+  runtimeHooksRegistered = true;
+
   context.subscribe("interval.day", () => {
     try {
       applyDailyLeagueTick();
@@ -183,6 +190,11 @@ function registerHooks(): void {
 
 function applySpotlightGuestBurst(): void {
   if (context.mode !== "normal") {
+    return;
+  }
+
+  const storedState = peekStoredState();
+  if (!storedState || !hasAnyPlayerBoost(storedState)) {
     return;
   }
 
@@ -258,6 +270,7 @@ function registerUi(): void {
     }
 
     try {
+      registerHooks();
       openMainWindow();
     } catch (error) {
       logPluginError("menu.open", error);
@@ -274,28 +287,23 @@ function main(): void {
   closePrestigeWindowIfOpen();
   closeWatchlistWindowIfOpen();
 
-  registerHooks();
   registerUi();
   if (context.mode === "normal") {
-    const snapshot = tryReadSnapshot("main.snapshot");
-    if (!snapshot) {
-      console.log(`[${PLUGIN_NAME}] Loaded v${PLUGIN_VERSION}. Snapshot unavailable.`);
-      return;
-    }
-
-    const synced = trySyncLeagueMonth(snapshot, "main.sync");
-    if (synced) {
-      console.log(
-        `[${PLUGIN_NAME}] Loaded v${PLUGIN_VERSION}. Current rank: ${synced.state.player.currentRank ?? "n/a"}.`
-      );
-      return;
-    }
-
-    console.log(`[${PLUGIN_NAME}] Loaded v${PLUGIN_VERSION}. League sync unavailable.`);
+    console.log(
+      `[${PLUGIN_NAME}] Loaded v${PLUGIN_VERSION}. Runtime hooks will initialize the first time the plugin window is opened in a park.`
+    );
     return;
   }
 
   console.log(`[${PLUGIN_NAME}] Loaded v${PLUGIN_VERSION}. Waiting for an active park.`);
+}
+
+function hasAnyPlayerBoost(state: WorldParkLeagueState): boolean {
+  return (
+    (state.world.spotlightMonthsRemaining > 0 && state.world.spotlightParkId === PLAYER_PARK_ID) ||
+    (state.world.featuredDaysRemaining > 0 && state.world.featuredParkId === PLAYER_PARK_ID) ||
+    (state.world.breakoutDaysRemaining > 0 && state.world.breakoutParkId === PLAYER_PARK_ID)
+  );
 }
 
 registerPlugin({

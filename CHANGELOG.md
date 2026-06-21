@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.22.0
+
+- Added difficulty presets (`Casual`, `Normal`, `Hard`, `Tycoon`) that scale objective frequency, penalties, rival pressure, investment shocks, and catch-up intensity.
+- Added active player objectives with real deadlines, park-cash rewards, park-cash penalties, board/investor consequences, and short momentum rewards.
+- Added more downside risk to rival investments through negative paper-value shock events, so holdings are no longer mostly upward-drifting.
+- Added visible warning popups and a compact challenge timeline for rival attacks, failed objectives, investment shocks, and other important pressure events.
+- Simplified the main player UI with clearer top-level numbers, renamed shortcut buttons (`Money`, `Rivals`, `Goals`), and moved deeper analysis into advanced/detail views.
+- Added one-time save calibration for older/high-score saves so strong existing parks do not instantly trivialize the league when the plugin state is created or migrated.
+- Kept the player-facing release UI free of debug controls while preserving internal debug hooks for development builds and local testing.
+
 ## 0.21.0
 
 - Introduced the first production `Owner Finance` layer with dedicated owner cash, board salary, owner net worth, and save migration support.

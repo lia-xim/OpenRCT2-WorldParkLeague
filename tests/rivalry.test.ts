@@ -159,6 +159,56 @@ describe("rivalry insights", () => {
     expect(state.world.breakoutRewardOverrideParkId).toBe(PLAYER_PARK_ID);
     expect(state.player.prestige.activeRewards.some((reward) => reward.id.includes(challenge.id))).toBe(true);
   });
+
+  it("charges park cash when a direct rival challenge is lost", () => {
+    const state = createInitialState(0, "Penalty Park");
+    state.player.watchlist.focusRivalIds = ["rival-1"];
+    state.player.currentRank = 9;
+    state.world.leaderboard = createLeaderboard(state, {
+      playerRank: 9,
+      rivalRanks: {
+        "rival-1": 8,
+      },
+      scoreById: {
+        [PLAYER_PARK_ID]: 76.5,
+        "rival-1": 78.4,
+      },
+      shareById: {
+        [PLAYER_PARK_ID]: 0.033,
+        "rival-1": 0.037,
+      },
+      profitById: {
+        [PLAYER_PARK_ID]: 11_000,
+        "rival-1": 22_500,
+      },
+      momentumById: {
+        [PLAYER_PARK_ID]: 1.1,
+        "rival-1": 2.4,
+      },
+    });
+
+    maybeStartRivalChallenge(state, 14, "rival-1");
+
+    const challenge = state.player.rivalry.activeChallenge;
+    if (!challenge) {
+      throw new Error("Expected an active rival challenge.");
+    }
+
+    const result = advanceRivalChallenge(
+      state,
+      createSnapshot({
+        currentDayIndex: challenge.resolveAtDayIndex,
+        lastMonthOperatingProfit: 4_000,
+      }),
+      challenge.resolveAtDayIndex
+    );
+
+    expect(challenge.penaltyCash).toBeGreaterThan(0);
+    expect(result.cashDelta).toBe(-challenge.penaltyCash);
+    expect(result.notifications[0]).toMatch(/penalty/i);
+    expect(state.player.rivalry.activeChallenge).toBeNull();
+    expect(state.player.rivalry.wonChallenges).toBe(0);
+  });
 });
 
 function createSnapshot(overrides: Partial<PlayerSnapshot> = {}): PlayerSnapshot {
@@ -196,6 +246,8 @@ function point(dayIndex: number, score: number, marketShare: number): ParkHistor
     companyValue: 1_000_000,
     monthlyProfit: 12_000,
     money: 50_000,
+    ownerCash: 18_000,
+    ownerNetWorth: 210_000,
     momentum: 0,
   };
 }

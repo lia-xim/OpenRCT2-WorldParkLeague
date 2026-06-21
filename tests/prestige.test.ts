@@ -45,6 +45,8 @@ function point(month: number, rank: number, score: number): ParkHistoryPoint {
     companyValue: 700_000 + month * 40_000,
     monthlyProfit: 10_000 + month * 4_000,
     money: 45_000 + month * 6_000,
+    ownerCash: 20_000 + month * 3_000,
+    ownerNetWorth: 220_000 + month * 28_000,
     momentum: 2 + month * 0.3,
   };
 }

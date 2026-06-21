@@ -45,6 +45,8 @@ function point(
     companyValue: 2_000_000 + month * 10_000,
     monthlyProfit,
     money: 50_000 + month * 1_000,
+    ownerCash: 24_000 + month * 1_400,
+    ownerNetWorth: 260_000 + month * 12_000,
     momentum: 0,
   };
 }

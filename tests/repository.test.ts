@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CURRENT_SCHEMA_VERSION } from "../src/config";
 import { createInitialState } from "../src/domain/simulation";
 import { migrateState } from "../src/state/repository";
 import type { PlayerSnapshot } from "../src/types";
@@ -114,15 +115,17 @@ describe("migrateState", () => {
     expect(Array.isArray(migrated.player.prestige.unlockedAchievements)).toBe(true);
     expect(migrated.world.history.__player__?.[0]?.dayIndex).toBe(93);
     expect(migrated.world.history.__player__?.[0]?.momentum).toBe(0);
+    expect(migrated.world.history.__player__?.[0]?.ownerCash).toBe(0);
+    expect(migrated.world.history.__player__?.[0]?.ownerNetWorth).toBe(0);
     expect(Array.isArray(migrated.world.historyEvents.__player__)).toBe(true);
     expect(migrated.lastLivePulseDayIndex).toBe(snapshot.currentDayIndex);
     expect(migrated.lastLiveEventDayIndex).toBe(snapshot.currentDayIndex);
     expect(migrated.world.rivals.length).toBeGreaterThanOrEqual(migrated.config.rivalCount);
-    expect(migrated.config.dominantLeadThreshold).toBe(0.07);
-    expect(migrated.config.maxCatchUpPressure).toBe(0.26);
-    expect(migrated.config.spotlightGuestMultiplier).toBe(1.8);
-    expect(migrated.config.spotlightScoreBonus).toBe(1.5);
-    expect(migrated.world.spotlightGuestMultiplier).toBe(1.8);
+    expect(migrated.config.dominantLeadThreshold).toBe(0.06);
+    expect(migrated.config.maxCatchUpPressure).toBe(0.36);
+    expect(migrated.config.spotlightGuestMultiplier).toBe(1.5);
+    expect(migrated.config.spotlightScoreBonus).toBe(1);
+    expect(migrated.world.spotlightGuestMultiplier).toBe(1.5);
   });
 
   it("normalizes newer saves that are missing reward and rivalry fields", () => {
@@ -140,6 +143,9 @@ describe("migrateState", () => {
           newsRetention: seeded.config.newsRetention,
           dominantLeadThreshold: seeded.config.dominantLeadThreshold,
           maxCatchUpPressure: seeded.config.maxCatchUpPressure,
+          catchUpPlayerDominanceScale: seeded.config.catchUpPlayerDominanceScale,
+          catchUpTenureScale: seeded.config.catchUpTenureScale,
+          catchUpLocalRivalScale: seeded.config.catchUpLocalRivalScale,
           mergerChance: seeded.config.mergerChance,
           challengerChance: seeded.config.challengerChance,
           annualMarketGrowthRate: seeded.config.annualMarketGrowthRate,
@@ -147,6 +153,12 @@ describe("migrateState", () => {
           liveEventIntervalDays: seeded.config.liveEventIntervalDays,
           spotlightGuestMultiplier: seeded.config.spotlightGuestMultiplier,
           spotlightScoreBonus: seeded.config.spotlightScoreBonus,
+          featuredGuestMultiplier: seeded.config.featuredGuestMultiplier,
+          breakoutGuestMultiplier: seeded.config.breakoutGuestMultiplier,
+          guestCapRankScale: seeded.config.guestCapRankScale,
+          guestCapShareScale: seeded.config.guestCapShareScale,
+          guestCapAwardBonus: seeded.config.guestCapAwardBonus,
+          guestCapUpperClamp: seeded.config.guestCapUpperClamp,
         },
         world: {
           ...seeded.world,
@@ -192,13 +204,18 @@ describe("migrateState", () => {
       snapshot
     );
 
-    expect(migrated.config.investmentSaleMultiplier).toBe(0.82);
-    expect(migrated.config.investmentDividendMultiplier).toBe(0.72);
-    expect(migrated.config.prestigeRewardCashMultiplier).toBe(0.72);
-    expect(migrated.config.prestigeRewardBoostMultiplier).toBe(0.78);
+    expect(migrated.config.investmentSaleMultiplier).toBe(0.6);
+    expect(migrated.config.investmentDividendMultiplier).toBe(0.42);
+    expect(migrated.config.prestigeRewardCashMultiplier).toBe(0.6);
+    expect(migrated.config.prestigeRewardBoostMultiplier).toBe(0.66);
+    expect(migrated.config.catchUpPlayerDominanceScale).toBe(1.08);
+    expect(migrated.config.catchUpPlayerGrowthScale).toBe(0.026);
+    expect(migrated.config.catchUpTenureScale).toBe(0.014);
+    expect(migrated.config.catchUpLocalRivalScale).toBe(1.5);
     expect(migrated.world.featuredRewardOverrideDaysRemaining).toBe(0);
     expect(migrated.world.breakoutRewardOverrideDaysRemaining).toBe(0);
     expect(migrated.player.rivalry.activeChallenge?.type).toBe("profit_duel");
+    expect(migrated.player.rivalry.activeChallenge?.penaltyCash).toBe(11_700);
     expect(migrated.player.rivalry.cooldownDaysRemaining).toBe(0);
     expect(Array.isArray(migrated.player.prestige.activeRewards)).toBe(true);
     expect(migrated.player.prestige.lastRewardSummary).toBeNull();
@@ -254,7 +271,9 @@ describe("migrateState", () => {
       snapshot
     );
 
-    expect(migrated.schemaVersion).toBe(23);
+    expect(migrated.schemaVersion).toBe(CURRENT_SCHEMA_VERSION);
+    expect(migrated.config.difficultyPreset).toBe("normal");
+    expect(migrated.player.objectives.activeObjective).toBeNull();
     expect(migrated.player.owner.cash).toBeGreaterThan(0);
     expect(migrated.player.owner.lastCashFlowSummary).toContain("Legacy holdings");
     expect(migrated.player.investments).toHaveLength(1);

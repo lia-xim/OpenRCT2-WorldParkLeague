@@ -1,5 +1,7 @@
 import { PLAYER_PARK_ID, SUPPORTING_BOOST_DURATION_DAYS } from "../config";
 import { formatMoney } from "./currency";
+import { getDifficultyProfile } from "./difficulty";
+import { clamp } from "./math";
 import { calculatePlayerScoreBreakdown } from "./player";
 import { getLocalMarketSummary, isFocusRival, isWatchedRival } from "./watchlist";
 import type {
@@ -134,7 +136,7 @@ export function maybeStartRivalChallenge(
     return notifications;
   }
 
-  const challenge = createChallenge(summary, playerEntry, rivalEntry, dayIndex);
+  const challenge = createChallenge(state, summary, playerEntry, rivalEntry, dayIndex);
   state.player.rivalry.activeChallenge = challenge;
   state.player.rivalry.lastChallengeSummary = `${challenge.title} vs ${challenge.rivalName} is live.`;
   notifications.push(`Rival challenge: ${challenge.title} against ${challenge.rivalName} is live for ${CHALLENGE_DURATION_DAYS} days.`);
@@ -187,13 +189,14 @@ export function advanceRivalChallenge(
     return result;
   }
 
-  state.player.rivalry.lastChallengeSummary = `${challenge.rivalName} held you off in ${challenge.title}.`;
+  result.cashDelta -= challenge.penaltyCash;
+  state.player.rivalry.lastChallengeSummary = `${challenge.rivalName} held you off in ${challenge.title}. Penalty ${formatMoney(challenge.penaltyCash)}.`;
   result.notifications.push(
-    `Challenge lost: ${challenge.rivalName} held you off in ${challenge.title}.`
+    `Challenge lost: ${challenge.rivalName} held you off in ${challenge.title}. Park cash penalty ${formatMoney(challenge.penaltyCash)}.`
   );
   result.headlines.push({
     title: `${challenge.rivalName} held you off in a rivalry challenge.`,
-    detail: `The duel went their way this time, so the reward window passed without paying out.`,
+    detail: `The duel went their way this time. You missed the reward window and paid ${formatMoney(challenge.penaltyCash)} from park cash.`,
     rivalId: challenge.rivalId,
     success: false,
   });
@@ -211,7 +214,7 @@ export function getActiveChallengeSummary(
   return `${challenge.title} vs ${challenge.rivalName} | ${remainingChallengeDays(
     challenge,
     Math.max(state.lastLivePulseDayIndex, challenge.issuedAtDayIndex)
-  )}d | reward ${formatMoney(challenge.rewardCash)} + ${describeChallengeReward(challenge)}`;
+  )}d | reward ${formatMoney(challenge.rewardCash)} | risk ${formatMoney(challenge.penaltyCash)} | ${describeChallengeReward(challenge)}`;
 }
 
 export function formatHeadToHeadLine(summary: HeadToHeadSummary | null): string {
@@ -415,13 +418,14 @@ function resolvePressureLabel(scoreGap: number, peopleShareGap: number, profitGa
 }
 
 function createChallenge(
+  state: WorldParkLeagueState,
   summary: HeadToHeadSummary,
   playerEntry: LeaderboardEntry,
   rivalEntry: LeaderboardEntry,
   dayIndex: number
 ): PlayerRivalChallenge {
   const type = chooseChallengeType(summary);
-  const rewardCash = type === "profit_duel" ? 18_000 : type === "share_sprint" ? 14_000 : 16_000;
+  const cashProfile = calculateChallengeCashProfile(state, type, playerEntry);
   const rewardBoostType = type === "profit_duel" ? "buzz" : "featured";
   const rewardScoreBonus = type === "profit_duel" ? 3.5 : type === "share_sprint" ? 2.5 : 3;
 
@@ -440,11 +444,33 @@ function createChallenge(
     baselineRivalShare: rivalEntry.marketShare,
     baselinePlayerProfit: playerEntry.monthlyProfit,
     baselineRivalProfit: rivalEntry.monthlyProfit,
-    rewardCash,
+    rewardCash: cashProfile.rewardCash,
+    penaltyCash: cashProfile.penaltyCash,
     rewardBoostType,
     rewardBoostDays: SUPPORTING_BOOST_DURATION_DAYS,
     rewardScoreBonus,
     rewardDurationDays: 21,
+  };
+}
+
+function calculateChallengeCashProfile(
+  state: WorldParkLeagueState,
+  type: RivalChallengeType,
+  playerEntry: LeaderboardEntry
+): { rewardCash: number; penaltyCash: number } {
+  const difficulty = getDifficultyProfile(state.config.difficultyPreset);
+  const baseReward = type === "profit_duel" ? 18_000 : type === "share_sprint" ? 14_000 : 16_000;
+  const valueScale = clamp(
+    Math.sqrt(Math.max(80_000, playerEntry.companyValue) / 650_000),
+    0.65,
+    2.8
+  );
+  const profitScale = clamp(1 + Math.max(0, playerEntry.monthlyProfit) / 120_000, 0.85, 1.8);
+  const rewardCash = Math.round(baseReward * valueScale * profitScale * difficulty.challengeRewardScale);
+  const penaltyRate = type === "profit_duel" ? 0.75 : type === "share_sprint" ? 0.68 : 0.62;
+  return {
+    rewardCash,
+    penaltyCash: Math.round(rewardCash * penaltyRate * difficulty.challengePenaltyScale),
   };
 }
 

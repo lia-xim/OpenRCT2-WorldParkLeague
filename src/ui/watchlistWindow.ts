@@ -1,9 +1,11 @@
 import { readPlayerSnapshot } from "../domain/player";
 import { getArchetypeDescription, getArchetypeLabel } from "../domain/rivals";
 import {
+  getAlertPriorityLabel,
   getFocusRivalGapLabel,
   getFocusRivals,
   getTrackedRivals,
+  isImportantAlert,
   isFocusRival,
 } from "../domain/watchlist";
 import { readState, toggleWatchlistRivalById } from "../state/repository";
@@ -17,6 +19,7 @@ let selectedTrackedRivalId: string | null = null;
 let trackedRowIds: string[] = [];
 let selectedAlertId: string | null = null;
 let alertRowIds: string[] = [];
+let importantAlertsOnly = true;
 
 export function openWatchlistWindow(): void {
   if (typeof ui === "undefined") {
@@ -117,20 +120,34 @@ export function openWatchlistWindow(): void {
 
       { type: "groupbox", x: 8, y: 282, width: 544, height: 258, text: "Recent Alerts" },
       {
+        type: "button",
+        name: "alert-filter",
+        x: 18,
+        y: 296,
+        width: 132,
+        height: 16,
+        text: "Important only",
+        onClick: () => {
+          importantAlertsOnly = !importantAlertsOnly;
+          updateWatchlistContents(readState(readPlayerSnapshot()), readPlayerSnapshot());
+        },
+      },
+      {
         type: "listview",
         name: "alert-list",
         x: 18,
-        y: 300,
+        y: 320,
         width: 524,
-        height: 118,
+        height: 98,
         scrollbars: "vertical",
         isStriped: true,
         showColumnHeaders: true,
         canSelect: true,
         columns: [
           { header: "When", width: 74 },
-          { header: "Park", width: 152 },
-          { header: "Alert", width: 278 },
+          { header: "Park", width: 146 },
+          { header: "Priority", width: 62 },
+          { header: "Alert", width: 216 },
         ],
         items: [],
         onClick: (item) => {
@@ -237,16 +254,20 @@ function updateWatchlistContents(
   }
 
   const alertList = window.findWidget("alert-list") as ListViewWidget | null;
+  const visibleAlerts = importantAlertsOnly
+    ? state.player.watchlist.alerts.filter((alert) => isImportantAlert(alert))
+    : state.player.watchlist.alerts;
   if (alertList) {
-    alertRowIds = state.player.watchlist.alerts.map((alert) => alert.id);
+    alertRowIds = visibleAlerts.map((alert) => alert.id);
     alertList.items =
-      state.player.watchlist.alerts.length > 0
-        ? state.player.watchlist.alerts.map((alert) => [
+      visibleAlerts.length > 0
+        ? visibleAlerts.map((alert) => [
             formatAlertTime(alert.dayIndex),
             alert.parkName,
+            getAlertPriorityLabel(alert),
             alert.title,
           ])
-        : [["No alerts yet.", "", ""]];
+        : [["No alerts yet.", "", "", ""]];
   }
 
   if (selectedAlertId && !alertRowIds.includes(selectedAlertId)) {
@@ -258,6 +279,10 @@ function updateWatchlistContents(
 
   const selectedTracked = trackedRivals.find((rival) => rival.id === selectedTrackedRivalId) ?? null;
   const selectedAlert = state.player.watchlist.alerts.find((alert) => alert.id === selectedAlertId) ?? null;
+  const filterButton = window.findWidget("alert-filter") as ButtonWidget | null;
+  if (filterButton) {
+    filterButton.text = importantAlertsOnly ? "Important only" : "All alerts";
+  }
 
   setButtonDisabled(window, "unwatch-selected", !selectedTracked);
   setLabel(
@@ -278,14 +303,15 @@ function updateWatchlistContents(
     window,
     "alert-detail",
     selectedAlert
-      ? `${selectedAlert.title} ${selectedAlert.detail}`
+      ? `${selectedAlert.title} (${getAlertPriorityLabel(selectedAlert)}) ${selectedAlert.detail}`
       : "Alerts will explain why a tracked or local rival suddenly matters."
   );
   setLabel(
     window,
     "alert-footer",
-    state.player.watchlist.lastAlertSummary ??
-      `${state.player.watchlist.watchedRivalIds.length} tracked | ${state.player.watchlist.focusRivalIds.length} local rivals`
+    `${visibleAlerts.length}/${state.player.watchlist.alerts.length} alerts shown | ${
+      state.player.watchlist.lastAlertSummary ?? "No recent alert summary."
+    }`
   );
 }
 

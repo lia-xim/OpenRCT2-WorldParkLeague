@@ -128,7 +128,7 @@ describe("simulateMonth", () => {
 
     const result = simulateMonth(buyResult.state, createSnapshot(), 0);
 
-    expect(result.ownerCashDelta).toBeGreaterThan(0);
+    expect(result.parkCashDelta).toBeGreaterThan(0);
     expect(result.playerNotifications.length).toBeGreaterThan(0);
     expect(result.nextState.player.investments).toHaveLength(0);
   });
@@ -292,7 +292,7 @@ describe("simulateMonth", () => {
     expect(result.nextState.player.currentRank).toBe(1);
     expect(result.nextState.world.spotlightParkId).toBe("__player__");
     expect(result.nextState.world.spotlightParkName).toBe("Test Park");
-    expect(result.nextState.player.guestCapModifier).toBeGreaterThan(2);
+    expect(result.nextState.player.guestCapModifier).toBeGreaterThan(1.6);
     expect(result.nextState.player.guestCapModifier).toBeLessThan(6);
     expect(
       result.headlines.some((headline) => headline.headline.includes("World Spotlight"))

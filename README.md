@@ -27,8 +27,10 @@ It adds:
 
 - a `50`-park living league that updates every day
 - local rivals that compete directly with you for attention
+- difficulty presets from relaxed to punishing
+- active target tasks with deadlines, rewards, and real penalties
 - prestige, yearly recaps, achievements, and long-term progression
-- an owner-finance layer with salary, owner cash, net worth, and one unified rival portfolio
+- a park-cash economy layer with one unified rival portfolio, real payouts, losses, penalties, and pressure
 - a management layer with buybacks, governance, and rewards
 - rivalry pressure that gives late-game parks something meaningful to fight for
 
@@ -50,10 +52,10 @@ This plugin is for you if you want:
 | Area | What it adds |
 | --- | --- |
 | Global competition | 50 simulated parks, daily movement, major world events, mergers, bankruptcies, recoveries, expansion waves |
-| Player pressure | People share, guest-cap pressure, score races, local rivals, spotlight and buzz swings |
-| Management layer | Owner portfolio, dividends, exits, salary, buybacks, governance pressure, management actions |
-| Progression | Prestige goals, achievement rewards, yearly recap, records, trend charts, progress filters |
-| Rival storytelling | primary rivals, watchlist alerts, head-to-head challenges, analyst guidance, league headlines |
+| Player pressure | difficulty presets, active target tasks, people share, guest-cap pressure, score races, local rivals, spotlight and buzz swings |
+| Management layer | park-cash-funded rival portfolio, dividends, exits, negative investment shocks, challenge penalties, buybacks, governance pressure |
+| Progression | prestige goals, achievement rewards, yearly recap, records, trend charts, park-finance trend visibility, progress filters |
+| Rival storytelling | primary rivals, watchlist alerts, head-to-head challenges, visible warning popups, analyst guidance, league headlines |
 
 ## What makes it feel different
 
@@ -80,14 +82,24 @@ That is the fantasy: not just a better spreadsheet, but a better story.
 
 - direct local rivals that mirror your competitive lane
 - head-to-head challenge system with rewards and pressure
+- visible warning popups when rivals attack your position
 - rivalry tracking in both the main UI and prestige flows
 - alerts when a rival surges, weakens, or becomes vulnerable
 
+### Difficulty and active objectives
+
+- choose `Casual`, `Normal`, `Hard`, or `Tycoon` from the main window
+- receive timed park tasks such as guest growth, rating recovery, profit pushes, or expansion briefs
+- complete objectives for park-cash rewards and temporary momentum
+- fail objectives and lose real park cash while board and investor confidence take a hit
+- track active objectives and rival pressure in the compact challenge timeline
+
 ### Management and economy
 
-- receive a board salary and grow separate owner cash outside the park treasury
-- invest in other parks through one unified owner portfolio
-- receive dividends and handle merger carry-over or forced exits
+- invest park cash into other parks through one unified league portfolio
+- receive dividends, handle merger carry-over, forced exits, and negative investment outcomes
+- lose real park cash when head-to-head rival challenges fail
+- track park cash, portfolio value, league worth, and active pressure in the live UI
 - manage equity offers, buybacks, and governance pressure
 - use management actions to push for momentum or stability
 
@@ -132,6 +144,8 @@ The main window is designed around two reading styles:
 - `Simple`: easier to scan while playing
 - `Advanced`: deeper management and analysis
 
+The default view now focuses on the next actionable things: current rank, park cash, profit, active goal, boost state, difficulty, and current risk. Deeper finance and rival context lives behind `Money`, `Rivals`, and `Goals`.
+
 The shipped release UI is the real player-facing design.  
 Visible debug controls are intentionally removed from the public release experience.
 
@@ -144,6 +158,7 @@ The main remaining refinement area is long-run balance, especially:
 - top-end snowballing
 - long-hold investment ROI
 - extended real-save validation across small, midgame, and dominant parks
+- deeper challenge and rival-pressure tuning across real saves
 
 So the foundation is strong, but balancing is still being actively improved.
 
@@ -209,14 +224,26 @@ npm run install:plugin
 <summary><strong>Balance and QA commands</strong></summary>
 
 ```powershell
+npm run analyze:balance:quick
 npm run analyze:balance
 npm run analyze:balance:lab
+npm run analyze:balance:autotune
 npm run analyze:balance:release
 ```
 
+- `analyze:balance:quick`: fast everyday balance snapshot for iteration
 - `analyze:balance`: reproducible baseline balance report
 - `analyze:balance:lab`: parallel candidate search across major balancing knobs
-- `analyze:balance:release`: longer multi-worker release soak for production-style QA
+- `analyze:balance:autotune`: runs the candidate search, saves the full report, and tells you whether the current live defaults should be replaced
+- `analyze:balance:release`: controlled release soak with pragmatic defaults for production-style QA
+
+Saved reports:
+
+- `dist/balance-quick-latest.json`
+- `dist/balance-autotune-latest.json`
+- `dist/balance-release-latest.json`
+
+The project now has a real automatic balance loop, but it is intentionally advisory rather than magical. It can search a wide parameter space and recommend stronger live defaults, but real-save QA still matters for final release judgment.
 
 </details>
 
@@ -233,6 +260,7 @@ docs/
   release-checklist.md
   requirements-tracker.md
 scripts/
+  analyze-balance-quick.mjs
   analyze-balance-release.mjs
   analyze-balance-lab.mjs
   analyze-balance.mjs
@@ -288,6 +316,7 @@ Near-term priorities:
 - continue reducing top-end snowballing
 - further tune long-term investment returns
 - expand real-save QA coverage
+- keep widening the automatic anti-dominance tuning space where the lab still finds sticky top-end behavior
 - keep improving player guidance and readability
 
 ## Credits

@@ -18,7 +18,7 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] OpenRCT2 soll sich wie Teil einer groesseren internationalen Parkbranche anfuehlen
 - [x] Konkurrenzparks sollen wirtschaftlich simuliert werden, ohne begehbare Fremdparks zu brauchen
 - [x] Das Endgame soll durch Konkurrenz, Marktanteile und Prestige spannend bleiben
-- [ ] Der Spieler soll neben der Parkkasse auch eine eigene Eigentuemer-/Privatfinanzebene bekommen
+- [x] Wirtschaftliche Entscheidungen sollen die echte Parkkasse betreffen, damit Trading, Rewards und Strafen gameplayrelevant bleiben
 - [x] Das System soll sauber, modular und produktionsnah aufgebaut sein
 - [x] Das System soll eine lebende Dokumentation und einen nachvollziehbaren Umsetzungsstand haben
 
@@ -32,6 +32,7 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Globale Nachfrage und Saisonfaktoren
 - [x] Rivalen-Scoring und Rangliste
 - [x] Catch-up-Mechanik fuer Konkurrenten
+- [x] Difficulty Presets fuer Casual/Normal/Hard/Tycoon als zentrale Balancing-Schicht
 - [x] Newsfeed fuer wichtige Welt- und Rivalenereignisse
 - [x] Jaehrlicher Haupt-Award
 - [x] Strukturelle Events fuer Mergers und neue Challenger
@@ -45,8 +46,10 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Besucherwirkung ueber `park.guest.softcap.calculate`
 - [x] Rank-/Marktanteils-Einfluss auf Besucher
 - [x] Award-Bonus auf Besucherlogik
-- [-] Tieferes Balancing gegen Snowballing
+- [x] Tieferes Balancing gegen Snowballing mit Leader-Pressure, staerkerem Rivalen-Catch-up und Balance-Harness
 - [x] Mehr direkte OpenRCT2-Rueckkopplung ueber Nachrichten, Awards und UI-Hinweise
+- [x] Aktive Zielaufgaben mit Deadline, Reward, Park-Cash-Strafe und Board-/Investor-Folgen
+- [x] Bestehende starke Savegames werden bei neuer/migrierter League-State-Erstellung einmalig gegen ein staerkeres Rivalenfeld kalibriert
 
 ## Governance und Board
 
@@ -71,13 +74,13 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Mehrere Kaufgroessen statt nur Standard-Lot
 - [x] Beteiligungen mit hoeherer strategischer Tiefe
 - [x] Beteiligungen mit echter Einflussmechanik auf Events, Synergien oder Zugang zu Boni
-- [-] Investment-ROI ueber lange Laeufe weiter entschlacken
-- [ ] Getrennte Eigentuemer-Finanzen statt nur Parkkasse als Handelsbasis
-- [ ] Persoenliches Cash, Net Worth und persoenliche Dividendenertraege
-- [ ] Gehalt / Board-Salary als regelmaessiger Eigentuemer-Zufluss
-- [ ] Vereinfachter Rivalen-Aktienmarkt mit persoenlichen Kauf-/Verkaufsentscheidungen
-- [x] Architekturentscheidung getroffen: kein zweites paralleles Investment-System, sondern Migration des bestehenden Systems auf Owner Holdings
-- [ ] Owner-Portfolio-Ansicht mit persoenlichem Cash, Gehalt, Holdings und Net Worth
+- [x] Investment-ROI ueber lange Laeufe deutlich entschaerft
+- [x] Entscheidung revidiert: keine separate Owner-Cash-Nebenwelt fuer Kern-Trading, weil sie zu wenig Gameplaydruck erzeugt
+- [x] Rivalen-Investments werden aus Park-Cash gekauft und zahlen wieder auf die Parkkasse aus
+- [x] Vereinfachter Rivalen-Aktienmarkt mit Kauf-/Verkaufsentscheidungen und echtem Parkkassen-Risiko
+- [x] Negative Investment-Schocks mit realem Paper-Value-Verlust fuer riskantere oder angeschlagene Holdings
+- [x] Architekturentscheidung getroffen: kein zweites paralleles Investment-System, sondern ein einziges League-Portfolio mit Park-Cash-Cashflows
+- [x] League-Portfolio-Ansicht mit Park Cash, Portfolio-Wert, League Worth und letztem Cashflow
 - [ ] Margin Buying nur als spaetere Erweiterung nach stabilem Basis-Markt
 - [ ] Short Selling nur als sehr spaete optionale Erweiterung wegen hoher Regel- und QA-Komplexitaet
 
@@ -93,6 +96,9 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Regionale Boom- und Schwachphasen
 - [x] Managementwechsel und Strategiewechsel einzelner Rivalen
 - [x] Lokaler Rivalen-Kreis fuer direkte Konkurrenz um den unmittelbaren Markt
+- [x] Rivalen-Pressure-Campaigns gegen den Spieler, die Board, Investoren und Momentum kurzfristig belasten
+- [x] Verlorene Head-to-head-Challenges kosten echte Parkkasse statt nur eine verpasste Belohnung zu sein
+- [x] Sichtbare Warn-Popups fuer Rivalenangriffe, Zielverfehlungen, Investment-Schocks und harte Negativevents
 
 ## UI und Bedienung
 
@@ -116,12 +122,14 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Watchlist-Fenster mit Alerts fuer beobachtete und lokale Rivalen
 - [x] Track/Unwatch-Flow direkt aus der Rivalenansicht
 - [x] Einfachere Standard-Ansicht fuer neue Nutzer mit `Simple`/`Advanced`-Modus
+- [x] Hauptfenster weiter vereinfacht: Top-Level zeigt nur Rang, Park-Cash, Profit, aktives Ziel, Boost, Difficulty und Hauptrisiko
+- [x] Schnellzugriffe klarer benannt als `Money`, `Rivals` und `Goals`
 - [x] `What matters now`-Hinweise fuer die naechste sinnvolle Spieleraktion
 - [x] Lokale Markt-Zusammenfassung direkt im Hauptfenster
 - [x] Score-Treiber im UI erklaert statt nur als nackte Zahl gezeigt
 - [x] Monatlicher `World Spotlight`-Boost fuer den Monatsbesten mit massivem sichtbarem Besucher-Push
-- [x] Separate Debug-Trigger fuer `Spotlight`, `Featured Pick` und `Breakout Buzz`, damit jede Boost-Stufe isoliert testbar bleibt
-- [x] Spotlight-Banner im Hauptfenster und Debug-Trigger fuer das manuelle Testen
+- [x] Interne Debug-Trigger fuer `Spotlight`, `Featured Pick` und `Breakout Buzz`, damit jede Boost-Stufe isoliert testbar bleibt
+- [x] Spotlight-Banner im Hauptfenster ohne oeffentliche Debug-Controls im Release-UI
 - [x] Zusaetzliche zufaellige `Featured`- und `Breakout`-Boosts fuer Ranks `2-10` und `11-20`
 - [x] `Yearly Recap` mit groesstem Gewinner, groesstem Verlierer, Hauptrivale, bestem Monat und groesstem Sprung
 - [x] `Prestige Goals` wie `1,000 guests`, `Top 10 streak`, lokaler Marktlead und People-Share-Ziele
@@ -137,8 +145,9 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] `Head-to-head`-Hauptrivale mit klarer Gap-/Momentum-Zusammenfassung direkt im UI
 - [x] Analyst-/Press-Layer mit verstaendlicher Begruendung, warum du stehst oder faellst
 - [x] Direkte Rivalen-Challenges mit sichtbarer Reward-/Status-Zusammenfassung
-- [ ] Eigener `Owner / Market`-Bereich oder Tab fuer persoenliche Finanzen und persoenliche Holdings
-- [ ] Klare Erklaerung im UI, welche Mittel der Parkkasse gehoeren und welche dem Eigentuemer
+- [x] `Challenge timeline` im Hauptfenster fuer aktive Ziele, Rivalen-Duelle und aktuelle Risiken
+- [x] `Capital / Portfolio`-Bereich fuer Park-Cash, Portfolio, Cashflows und Management-Aktionen
+- [x] Klare Erklaerung im UI, dass Rivalen-Trades, Dividenden, Exits, Challenges und Prestige-Cash die Parkkasse betreffen
 
 ## Technische und Architektur-Anforderungen
 
@@ -155,9 +164,14 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Reproduzierbarer Balance-Analyse-Harness
 - [x] Automatisierter Balance-Lauf via `npm run analyze:balance` fuer Zahlen/Fakten statt nur Bauchgefuehl
 - [x] Parallelisiertes `Balance Lab` via `npm run analyze:balance:lab` fuer automatisierte Kandidatensuche und Ranking
+- [x] Schneller Alltags-Check via `npm run analyze:balance:quick`
+- [x] Automatischer Tuning-Lauf via `npm run analyze:balance:autotune` mit konkreter Apply-/Keep-Empfehlung
 - [x] Langer Release-Soak via `npm run analyze:balance:release`
+- [x] Schnell-, Autotune- und Release-Reports werden als JSON-Artefakte unter `dist/` persistiert
 - [x] Analyse-Skripte und Balance-Harness in die TypeScript-Pruefung eingebunden
 - [x] Numerische Guards gegen nicht-finite Score- und Leaderboard-Zustaende
+- [x] Explizite Anti-Dominanz-Hebel fuer Catch-up-Druck und lokale Rivalitaet in den Balance-Suchraum aufgenommen
+- [x] Schema-24-Migration fuer Difficulty/Objectives und einmalige Rivalen-Kalibrierung
 - [-] Tieferes Ingame-Testing und Balancing gegen echte Spielverlaeufe
 
 ## Aktueller Fokus
@@ -165,15 +179,16 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Soliden Produktions-Grundstein legen
 - [x] Kernsimulation mit sauberer Architektur aufsetzen
 - [x] Erste Investment-Mechanik integrieren
-- [-] Balancing der Investment-Ertraege gegen zu starken Kapitalaufbau
+- [x] Balancing der Investment-Ertraege gegen zu starken Kapitalaufbau
 - [x] Achievement-Rewards und Prestige-Buffs mit echten Systembelohnungen statt nur Cosmetic Unlocks
 - [x] Rivalen-, Vergleichs- und Portfolio-Details im UI vertiefen
 - [x] Regionale Dynamik als Systemwelle einziehen
 - [x] Ersten Governance-Layer fuer den Spielerpark einziehen
 - [x] Investment-Flow um groessere Lots und Teilverkaeufe erweitern
-- [-] Tieferes Balancing ausarbeiten
+- [x] Tieferes Balancing mit Leader-Pressure, Wachstums-Catch-up und ROI-Kuerzung ausarbeiten
 - [x] Balance-Harness gegen veraltete Snapshot-Formate und NaN-Zustaende absichern
 - [x] Balance-Lab um echte Snowballing-Hebel wie Spotlight-Gast-Multiplikator und Spotlight-Score-Bonus erweitern
+- [x] Balance-Lab um explizite Anti-Dominanz-Hebel fuer Catch-up-Intensitaet und Top-Streak-Druck erweitern
 - [x] Watchlist- und Local-Rival-Mechanik fuer bessere Spielerfuehrung einziehen
 - [x] Hauptansicht um lokale Markt-Hinweise, Score-Treiber und `What matters now` erweitern
 - [x] Sichtbaren `World Spotlight`-Wow-Moment mit starkem Besucherboost und Debug-Schalter einziehen
@@ -181,20 +196,24 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Prestige-/Achievement-Layer mit eigener UI und persistenten Rekorden einziehen
 - [x] Head-to-head-Rivalitaet und Analystenfuehrung fuer bessere Lesbarkeit und mehr Story einziehen
 - [x] Release-Soak und wirtschaftliche Reward-/Investment-Hebel in den Balance-Lab-Workflow einziehen
-- [x] Erste `Owner Finance`-Welle mit Owner Cash, Salary, Owner Net Worth und einheitlichem Rivalen-Portfolio umsetzen
-- [x] Bestehende Rivalen-Investments auf eine Owner-Ebene migrieren statt ein zweites Parallel-System zu bauen
-- [x] Scope fuer persoenliche Finanzen bewusst klein halten und erst spaeter um Margin/Shorting erweitern
+- [x] Owner-Cash-Experiment zurueckgebaut und relevante League-Cashflows wieder an die Parkkasse gekoppelt
+- [x] Bestehende Rivalen-Investments in einem einzigen League-Portfolio gehalten statt ein zweites Parallel-System zu bauen
+- [x] Scope fuer Margin/Shorting bewusst auf spaeter verschoben, weil der Basismarkt zuerst schwerer und klarer sein muss
+- [x] Park-Cash-/Portfolio-Transparenz mit klarerer Erklaerung und Trenddaten ausgebaut
+- [x] Difficulty Presets, aktive Zielaufgaben, negative Investment-Events, Rivalen-Warn-Popups und Challenge-Timeline eingezogen
+- [x] Haupt-UI fuer neue Nutzer deutlich vereinfacht und tiefere Daten in Advanced-/Detailfenster verschoben
 
 ## Naechste Umsetzungsschritte
 
 1. Angewendetes Balance-Profil gegen echte Saves pruefen und bei Bedarf weiter verfeinern
-2. Investment-Balancing ueber echte Spielsituationen pruefen, vor allem ROI ueber mehrere Jahre
-3. Kapitalmassnahmen und Board-Votes ueber echte Saves feinjustieren
-4. Watchlist/Alerts ueber echte Savegames auf Signal-zu-Rauschen und Alert-Haeufigkeit feinjustieren
-5. Owner-Finance-UI weiter ausbauen, vor allem Cashflow-Historie, Salary-Kontext und persoenliche Finanztransparenz
-6. Vereinfachten Rivalen-Aktienmarkt fuer persoenliche Kauf-/Verkaufsentscheidungen weiter vertiefen
-7. Erst danach pruefen, ob Margin Buying als kontrollierte Erweiterung genug Mehrwert bringt
-8. Short Selling nur als spaete optionale Erweiterung behandeln, nicht als naechsten Kernschritt
-9. Weitere Diagnoseansichten fuer Score-, Markt- und Event-Ursachen ausbauen
-10. GitHub-Release mit Screenshots, Beschreibung und Paket-Artefakten veroeffentlichen
-11. Anforderungen und Tracker nach jeder Feature-Welle aktualisieren
+2. Difficulty Presets ueber echte kleine, mittlere und dominante Saves feinjustieren
+3. Zielaufgaben-Haeufigkeit, Rewards und Strafen auf Spielspass statt nur Zahlenwert pruefen
+4. Challenge-Penalties, Pressure-Campaigns und Investment-Schocks ueber echte Spielsituationen pruefen
+5. Watchlist/Alerts/Popups ueber echte Savegames auf Signal-zu-Rauschen und Alert-Haeufigkeit feinjustieren
+6. Capital-/Portfolio-UI weiter ausbauen, vor allem Cashflow-Historie und Risikoerklaerung
+7. Vereinfachten Rivalen-Aktienmarkt fuer Kauf-/Verkaufsentscheidungen weiter vertiefen
+8. Erst danach pruefen, ob Margin Buying als kontrollierte Erweiterung genug Mehrwert bringt
+9. Short Selling nur als spaete optionale Erweiterung behandeln, nicht als naechsten Kernschritt
+10. Weitere Diagnoseansichten fuer Score-, Markt- und Event-Ursachen ausbauen
+11. GitHub-Release mit Screenshots, Beschreibung und Paket-Artefakten veroeffentlichen
+12. Anforderungen und Tracker nach jeder Feature-Welle aktualisieren

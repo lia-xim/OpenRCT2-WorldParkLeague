@@ -237,30 +237,31 @@ Status:
 
 - erste produktionsfaehige Version umgesetzt
 
-## Phase 8: Owner Finance und vereinfachter Stock Market
+## Phase 8: Single-Portfolio-Park-Cash-Markt
 
 Aufgaben:
 
-- persoenliche Eigentuemer-Finanzen getrennt von der Parkkasse einfuehren
-- monatliches Gehalt / Board-Salary fuer den Spieler definieren
-- persoenliches Cash, persoenliches Net Worth und persoenliche Holdings modellieren
+- ein einziges Rivalen-Investment-System behalten
+- Kauf, Verkauf, Dividenden, Exits, Prestige-Cash und Challenge-Strafen ueber die echte Parkkasse routen
 - einfachen Rivalen-Aktienmarkt aufsetzen, der auf bereits vorhandenen Rivalenwerten basiert
-- UI fuer `Owner / Market` mit persoenlichem Portfolio und persoenlichen Kauf-/Verkaufsaktionen bauen
-- bestehende Investments per Migration zu Owner Holdings umdeuten statt ein zweites Portfolio-System aufzubauen
+- negative Investment-Schocks und Risikoerklaerung einbauen
+- UI fuer `Money` / Portfolio mit Kauf-/Verkaufsaktionen, Cashflow, Risiko und Park-Cash-Kontext bauen
+- bestehende Investments per Migration erhalten statt ein zweites Portfolio-System aufzubauen
 
 Definition of done:
 
-- der Spieler hat eine nachvollziehbare Eigentuemer-Ebene neben der Parkkasse
-- persoenliche Investitionen fuehlen sich wie ein eigenes Meta-Game an
-- Salary, Dividenden und persoenliche Holdings sind fuer den Spieler klar lesbar
+- der Spieler versteht, dass Liga-Trading die echte Parkkasse betrifft
+- Investitionen fuehlen sich wie ein bewusstes Risiko an, nicht wie kostenloses Nebeneinkommen
+- Dividenden, Exits, Verluste und Strafen sind fuer den Spieler klar lesbar
 - es existiert nur ein Rivalen-Investment-System, nicht zwei parallele Portfolios
 
 Status:
 
-- erste Owner-Finance-Welle umgesetzt
-- Owner Cash, Board Salary, Owner Net Worth und ein einziges Owner-Portfolio sind jetzt Teil der Runtime
-- Save-Migration fuer bestehende Rivalen-Investments auf die Owner-Ebene ist eingebaut
-- naechster sinnvoller Ausbau ist UI-/Diagnostik-Tiefe, nicht mehr die Grundarchitektur
+- Owner-Cash-Experiment nach Gameplay-Review zurueckgebaut
+- Relevante Cashflows laufen wieder ueber Park-Cash, damit das Feature spielerisch Druck erzeugt
+- Ein einziges League-Portfolio ist Teil der Runtime
+- Negative Investment-Schocks und Difficulty-Skalierung sind eingebaut
+- naechster sinnvoller Ausbau ist Balance-/Diagnostik-Tiefe, nicht mehr die Grundarchitektur
 - Architekturentscheidung dokumentiert in `docs/owner-finance-design.md`
 
 ## Phase 9: Advanced Brokerage (optional / spaeter)
@@ -291,8 +292,8 @@ Status:
 ## Erste konkrete Aufgabenliste
 
 1. Investment-Ertraege, Cashflow und Snowballing gegen echte Parks balancieren
-2. Investor- und Board-Mechaniken ueber echte Saves und Balancing-Runden feinjustieren
-3. Owner-Finance-UI und Cashflow-Diagnostik weiter vertiefen
+2. Difficulty, Zielaufgaben, Investor- und Board-Mechaniken ueber echte Saves und Balancing-Runden feinjustieren
+3. Money-/Portfolio-UI und Cashflow-Diagnostik weiter vertiefen
 4. Einfachen Rivalen-Aktienmarkt ohne Margin/Shorting weiter ausbauen
 5. Score-, Markt- und Event-Diagnostik im UI weiter vertiefen
 6. Groessere Ingame-Testlaeufe und Formelfeinjustierung durchfuehren
@@ -312,9 +313,9 @@ Wir beginnen mit dem Kern:
 
 Der naechste logische Ausbau ist deshalb nicht maximale Finanzkomplexitaet, sondern:
 
-- persoenliche Finanzen
-- Salary / Eigentuemer-Ebene
-- einfacher Rivalen-Aktienmarkt
-- klares Owner-Portfolio
+- Difficulty und echte Zielaufgaben
+- einfacher Rivalen-Aktienmarkt mit Park-Cash-Risiko
+- klares League-Portfolio
+- sichtbare Rivalenangriffe und bessere UI-Erklaerung
 
 Wenn dieser Kern funktioniert, kann der Rest organisch darauf wachsen.

@@ -285,7 +285,7 @@ function updatePrestigeContents(state: WorldParkLeagueState, snapshot: PlayerSna
 
   recordsPanel = {
     rows: [
-      `Peak owner cash ${formatCompactMoney(records.peakMoney)} | Peak park ${formatCompactMoney(records.peakParkValue)}`,
+      `Peak park cash ${formatCompactMoney(records.peakMoney)} | Peak park ${formatCompactMoney(records.peakParkValue)}`,
       `Best guest boost x${records.bestGuestCapModifier.toFixed(2)} | Longest Top 10 ${records.longestTopTenStreak}m`,
       `Top spot streak ${records.longestRankOneStreak}m | Holdings peak ${records.peakPortfolioHoldings}`,
       `Spotlights ${records.totalSpotlightWins} | Featured ${records.totalFeaturedWins} | Buzz ${records.totalBuzzWins}`,

@@ -2,7 +2,7 @@ import { DAYS_PER_MONTH, PLAYER_PARK_ID } from "../config";
 import { normalizeGameMoney } from "./currency";
 import { getGovernanceDetailLine, getGovernanceSummaryLine } from "./governance";
 import { average, clamp, logarithmicScale } from "./math";
-import type { LeaderboardEntry, PlayerSnapshot, WorldParkLeagueState } from "../types";
+import type { LeaderboardEntry, PlayerSnapshot, SimulationConfig, WorldParkLeagueState } from "../types";
 
 type MonthlyFinanceType = Parameters<Park["getMonthlyExpenditure"]>[0];
 
@@ -13,6 +13,18 @@ export interface GuestCapBreakdown {
   awardBonus: number;
   economyBonus: number;
 }
+
+type GuestCapConfig = Pick<
+  SimulationConfig,
+  "guestCapRankScale" | "guestCapShareScale" | "guestCapAwardBonus" | "guestCapUpperClamp"
+>;
+
+const DEFAULT_GUEST_CAP_CONFIG: GuestCapConfig = {
+  guestCapRankScale: 0.22,
+  guestCapShareScale: 0.65,
+  guestCapAwardBonus: 0.06,
+  guestCapUpperClamp: 1.35,
+};
 
 export interface PlayerScoreBreakdown {
   ratingScore: number;
@@ -150,7 +162,8 @@ export function calculateGuestCapModifier(
   marketShare: number,
   activeAwardMonthsRemaining: number,
   economyIndex: number,
-  tourismIndex: number
+  tourismIndex: number,
+  config: Partial<GuestCapConfig> = DEFAULT_GUEST_CAP_CONFIG
 ): number {
   return calculateGuestCapBreakdown(
     rank,
@@ -158,7 +171,8 @@ export function calculateGuestCapModifier(
     marketShare,
     activeAwardMonthsRemaining,
     economyIndex,
-    tourismIndex
+    tourismIndex,
+    config
   ).modifier;
 }
 
@@ -168,7 +182,8 @@ export function calculateGuestCapBreakdown(
   marketShare: number,
   activeAwardMonthsRemaining: number,
   economyIndex: number,
-  tourismIndex: number
+  tourismIndex: number,
+  config: Partial<GuestCapConfig> = DEFAULT_GUEST_CAP_CONFIG
 ): GuestCapBreakdown {
   if (!rank || fieldSize <= 1) {
     return {
@@ -180,15 +195,19 @@ export function calculateGuestCapBreakdown(
     };
   }
 
+  const guestCapConfig = {
+    ...DEFAULT_GUEST_CAP_CONFIG,
+    ...config,
+  };
   const rankStrength = 1 - (rank - 1) / (fieldSize - 1);
-  const rankBonus = (rankStrength - 0.5) * 0.22;
+  const rankBonus = (rankStrength - 0.5) * guestCapConfig.guestCapRankScale;
   const averageShare = 1 / fieldSize;
-  const shareBonus = clamp((marketShare - averageShare) * 0.65, -0.08, 0.09);
-  const awardBonus = activeAwardMonthsRemaining > 0 ? 0.06 : 0;
+  const shareBonus = clamp((marketShare - averageShare) * guestCapConfig.guestCapShareScale, -0.08, 0.09);
+  const awardBonus = activeAwardMonthsRemaining > 0 ? guestCapConfig.guestCapAwardBonus : 0;
   const economyBonus = clamp((economyIndex - 1) * 0.08 + (tourismIndex - 1) * 0.14, -0.05, 0.05);
 
   return {
-    modifier: clamp(1 + rankBonus + shareBonus + awardBonus + economyBonus, 0.75, 1.35),
+    modifier: clamp(1 + rankBonus + shareBonus + awardBonus + economyBonus, 0.75, guestCapConfig.guestCapUpperClamp),
     rankBonus,
     shareBonus,
     awardBonus,
@@ -210,7 +229,8 @@ export function getGuestCapBreakdownLine(state: WorldParkLeagueState): string {
     state.player.marketShare,
     state.player.activeAwardMonthsRemaining,
     state.world.economyIndex,
-    state.world.tourismIndex
+    state.world.tourismIndex,
+    state.config
   );
 
   return `Drivers Rank ${formatDelta(breakdown.rankBonus)} | People ${formatDelta(

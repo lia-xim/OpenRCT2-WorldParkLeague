@@ -8,6 +8,7 @@ import {
   getActiveProgramSummary,
   getBoardProposalRows,
 } from "../domain/governance";
+import { calculateOwnerNetWorth } from "../domain/owner";
 import { calculatePlayerEquityValue, readPlayerSnapshot } from "../domain/player";
 import {
   acceptGovernanceProposal,
@@ -35,6 +36,8 @@ import type {
 
 const CAPITAL_DESK_CLASSIFICATION = "world-park-league.capital-desk";
 const CAPITAL_DESK_TITLE = `${PLUGIN_NAME} | Capital Desk`;
+const WINDOW_WIDTH = 540;
+const WINDOW_HEIGHT = 742;
 
 let selectedOfferId: string | null = null;
 let offerRowIds: string[] = [];
@@ -61,12 +64,12 @@ export function openCapitalDeskWindow(): void {
   ui.openWindow({
     classification: CAPITAL_DESK_CLASSIFICATION,
     title: CAPITAL_DESK_TITLE,
-    width: 540,
-    height: 680,
-    minWidth: 540,
-    minHeight: 680,
-    maxWidth: 540,
-    maxHeight: 680,
+    width: WINDOW_WIDTH,
+    height: WINDOW_HEIGHT,
+    minWidth: WINDOW_WIDTH,
+    minHeight: WINDOW_HEIGHT,
+    maxWidth: WINDOW_WIDTH,
+    maxHeight: WINDOW_HEIGHT,
     onClose: () => {
       selectedOfferId = null;
       offerRowIds = [];
@@ -76,25 +79,26 @@ export function openCapitalDeskWindow(): void {
       actionRowTypes = [];
     },
     widgets: [
-      { type: "groupbox", x: 8, y: 18, width: 524, height: 98, text: "Equity Overview" },
+      { type: "groupbox", x: 8, y: 18, width: 524, height: 150, text: "Capital & Portfolio Overview" },
       {
         type: "custom",
         name: "equity-card",
         x: 18,
         y: 34,
         width: 504,
-        height: 72,
+        height: 100,
         onDraw(g) {
           drawStatCard(this, g, equityOverviewCard);
         },
       },
+      { type: "label", name: "owner-boundary", x: 18, y: 136, width: 504, height: 24, text: "" },
 
-      { type: "groupbox", x: 8, y: 122, width: 524, height: 176, text: "Open Capital Offers" },
+      { type: "groupbox", x: 8, y: 174, width: 524, height: 176, text: "Open Capital Offers" },
       {
         type: "listview",
         name: "offer-list",
         x: 18,
-        y: 140,
+        y: 192,
         width: 504,
         height: 88,
         scrollbars: "vertical",
@@ -123,7 +127,7 @@ export function openCapitalDeskWindow(): void {
         type: "button",
         name: "accept-offer",
         x: 18,
-        y: 234,
+        y: 286,
         width: 110,
         height: 16,
         text: "Accept offer",
@@ -135,7 +139,7 @@ export function openCapitalDeskWindow(): void {
         type: "button",
         name: "decline-offer",
         x: 136,
-        y: 234,
+        y: 286,
         width: 110,
         height: 16,
         text: "Decline offer",
@@ -147,7 +151,7 @@ export function openCapitalDeskWindow(): void {
         type: "button",
         name: "buyback-5",
         x: 256,
-        y: 234,
+        y: 286,
         width: 96,
         height: 16,
         text: "Buy back 5%",
@@ -159,7 +163,7 @@ export function openCapitalDeskWindow(): void {
         type: "button",
         name: "buyback-10",
         x: 360,
-        y: 234,
+        y: 286,
         width: 96,
         height: 16,
         text: "Buy back 10%",
@@ -167,15 +171,15 @@ export function openCapitalDeskWindow(): void {
           handleBuybackAction(0.1);
         },
       },
-      { type: "label", name: "offer-hint", x: 18, y: 254, width: 504, height: 14, text: "" },
-      { type: "label", name: "offer-footer", x: 18, y: 272, width: 504, height: 18, text: "" },
+      { type: "label", name: "offer-hint", x: 18, y: 306, width: 504, height: 14, text: "" },
+      { type: "label", name: "offer-footer", x: 18, y: 324, width: 504, height: 18, text: "" },
 
-      { type: "groupbox", x: 8, y: 304, width: 524, height: 170, text: "Board Votes" },
+      { type: "groupbox", x: 8, y: 356, width: 524, height: 170, text: "Board Votes" },
       {
         type: "listview",
         name: "proposal-list",
         x: 18,
-        y: 322,
+        y: 374,
         width: 504,
         height: 88,
         scrollbars: "vertical",
@@ -203,7 +207,7 @@ export function openCapitalDeskWindow(): void {
         type: "button",
         name: "approve-proposal",
         x: 18,
-        y: 416,
+        y: 468,
         width: 110,
         height: 16,
         text: "Approve vote",
@@ -215,7 +219,7 @@ export function openCapitalDeskWindow(): void {
         type: "button",
         name: "decline-proposal",
         x: 136,
-        y: 416,
+        y: 468,
         width: 110,
         height: 16,
         text: "Decline vote",
@@ -223,17 +227,17 @@ export function openCapitalDeskWindow(): void {
           handleProposalAction("decline");
         },
       },
-      { type: "label", name: "proposal-hint", x: 18, y: 438, width: 504, height: 20, text: "" },
-      { type: "label", name: "proposal-footer", x: 18, y: 458, width: 504, height: 12, text: "" },
+      { type: "label", name: "proposal-hint", x: 18, y: 490, width: 504, height: 20, text: "" },
+      { type: "label", name: "proposal-footer", x: 18, y: 510, width: 504, height: 12, text: "" },
 
-      { type: "groupbox", x: 8, y: 480, width: 524, height: 190, text: "League Actions" },
+      { type: "groupbox", x: 8, y: 532, width: 524, height: 198, text: "League Actions" },
       {
         type: "listview",
         name: "action-list",
         x: 18,
-        y: 498,
+        y: 550,
         width: 504,
-        height: 92,
+        height: 96,
         scrollbars: "vertical",
         isStriped: true,
         showColumnHeaders: true,
@@ -259,7 +263,7 @@ export function openCapitalDeskWindow(): void {
         type: "button",
         name: "action-pr",
         x: 18,
-        y: 598,
+        y: 654,
         width: 110,
         height: 16,
         text: "PR Blitz",
@@ -271,7 +275,7 @@ export function openCapitalDeskWindow(): void {
         type: "button",
         name: "action-festival",
         x: 136,
-        y: 598,
+        y: 654,
         width: 110,
         height: 16,
         text: "Guest Fest",
@@ -283,7 +287,7 @@ export function openCapitalDeskWindow(): void {
         type: "button",
         name: "action-safety",
         x: 254,
-        y: 598,
+        y: 654,
         width: 110,
         height: 16,
         text: "Safety Camp",
@@ -295,7 +299,7 @@ export function openCapitalDeskWindow(): void {
         type: "button",
         name: "action-efficiency",
         x: 372,
-        y: 598,
+        y: 654,
         width: 110,
         height: 16,
         text: "Efficiency",
@@ -303,8 +307,8 @@ export function openCapitalDeskWindow(): void {
           handleLeagueAction("efficiency_push");
         },
       },
-      { type: "label", name: "action-hint", x: 18, y: 620, width: 504, height: 22, text: "" },
-      { type: "label", name: "action-footer", x: 18, y: 644, width: 504, height: 18, text: "" },
+      { type: "label", name: "action-hint", x: 18, y: 678, width: 504, height: 22, text: "" },
+      { type: "label", name: "action-footer", x: 18, y: 704, width: 504, height: 20, text: "" },
     ],
   });
 
@@ -355,6 +359,7 @@ function updateCapitalDeskContents(state: WorldParkLeagueState, snapshot: Player
 
   const founderShare = getFounderOwnedShare(state);
   const outsideShare = getOutsideOwnedShare(state);
+  const ownerNetWorth = calculateOwnerNetWorth(state, snapshot);
   equityOverviewCard = {
     rows: [
       {
@@ -363,7 +368,11 @@ function updateCapitalDeskContents(state: WorldParkLeagueState, snapshot: Player
       },
       {
         left: { label: "Park cash", value: formatCompactMoney(snapshot.cash) },
-        right: { label: "Cash raised", value: formatCompactMoney(state.player.equity.totalCashRaised) },
+        right: { label: "Portfolio", value: formatCompactMoney(state.player.investmentSummary.portfolioValue) },
+      },
+      {
+        left: { label: "Last league flow", value: formatCompactMoney(state.player.investmentSummary.lastMonthCashDelta) },
+        right: { label: "League worth", value: formatCompactMoney(ownerNetWorth) },
       },
       {
         left: { label: "Park value", value: formatCompactMoney(snapshot.parkValue) },
@@ -371,14 +380,26 @@ function updateCapitalDeskContents(state: WorldParkLeagueState, snapshot: Player
       },
       {
         left: { label: "Equity value", value: formatCompactMoney(calculatePlayerEquityValue(snapshot)) },
-        right: { label: "Open offers", value: state.player.equity.activeOffers.length.toString() },
+        right: { label: "Cash raised", value: formatCompactMoney(state.player.equity.totalCashRaised) },
       },
       {
-        left: { label: "Pending votes", value: state.player.governance.pendingProposals.length.toString() },
-        right: { label: "Active programs", value: state.player.governance.activePrograms.length.toString() },
+        left: { label: "Open offers", value: state.player.equity.activeOffers.length.toString() },
+        right: { label: "Pending votes", value: state.player.governance.pendingProposals.length.toString() },
+      },
+      {
+        left: { label: "Active programs", value: state.player.governance.activePrograms.length.toString() },
+        right: { label: "League flow", value: trimText(state.player.owner.lastCashFlowSummary ?? "No recent flow.", 20) },
       },
     ],
   };
+  setLabel(
+    window,
+    "owner-boundary",
+    trimText(
+      `Park cash now funds rival stakes and receives dividends, exits, challenge payouts and prestige cash. This makes league decisions directly affect building money. Last flow: ${state.player.owner.lastCashFlowSummary ?? "No recent flow."}`,
+      124
+    )
+  );
 
   const list = window.findWidget("offer-list") as ListViewWidget | null;
   if (list) {
@@ -449,7 +470,7 @@ function updateCapitalDeskContents(state: WorldParkLeagueState, snapshot: Player
     state.player.equity.lastAcceptedOfferSummary ??
       state.player.equity.lastBuybackSummary ??
       state.player.equity.lastDeclinedOfferSummary ??
-      "Capital offers bring in cash. Buybacks reduce outside ownership but cost current market price."
+      "Capital offers affect the park treasury. Rival investments now also use park cash."
   );
   setLabel(
     window,
@@ -587,4 +608,12 @@ function buildActionHint(
     : `Ready to launch for ${formatMoney(definition.upfrontCost)}.`;
 
   return `${definition.title}: ${definition.story} ${definition.bestUse} ${stateText}`;
+}
+
+function trimText(value: string, maxLength: number): string {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, Math.max(0, maxLength - 3))}...`;
 }

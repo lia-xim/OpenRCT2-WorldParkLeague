@@ -68,11 +68,24 @@ export type RivalChallengeType =
   | "share_sprint"
   | "profit_duel";
 
+export type DifficultyPreset = "casual" | "normal" | "hard" | "tycoon";
+
+export type PlayerObjectiveType =
+  | "guest_growth"
+  | "rating_hold"
+  | "profit_push"
+  | "ride_expansion";
+
 export interface SimulationConfig {
+  difficultyPreset: DifficultyPreset;
   rivalCount: number;
   newsRetention: number;
   dominantLeadThreshold: number;
   maxCatchUpPressure: number;
+  catchUpPlayerDominanceScale: number;
+  catchUpPlayerGrowthScale: number;
+  catchUpTenureScale: number;
+  catchUpLocalRivalScale: number;
   mergerChance: number;
   challengerChance: number;
   annualMarketGrowthRate: number;
@@ -82,6 +95,10 @@ export interface SimulationConfig {
   spotlightScoreBonus: number;
   featuredGuestMultiplier: number;
   breakoutGuestMultiplier: number;
+  guestCapRankScale: number;
+  guestCapShareScale: number;
+  guestCapAwardBonus: number;
+  guestCapUpperClamp: number;
   investmentSaleMultiplier: number;
   investmentDividendMultiplier: number;
   prestigeRewardCashMultiplier: number;
@@ -192,6 +209,8 @@ export type HistoryMetricKey =
   | "companyValue"
   | "monthlyProfit"
   | "money"
+  | "ownerCash"
+  | "ownerNetWorth"
   | "rank";
 
 export interface ParkHistoryPoint {
@@ -203,6 +222,8 @@ export interface ParkHistoryPoint {
   companyValue: number;
   monthlyProfit: number;
   money: number;
+  ownerCash: number;
+  ownerNetWorth: number;
   momentum: number;
 }
 
@@ -354,6 +375,7 @@ export interface PlayerRivalChallenge {
   baselinePlayerProfit: number;
   baselineRivalProfit: number;
   rewardCash: number;
+  penaltyCash: number;
   rewardBoostType: "featured" | "buzz" | null;
   rewardBoostDays: number;
   rewardScoreBonus: number;
@@ -366,6 +388,33 @@ export interface PlayerRivalChallengeState {
   completedChallenges: number;
   wonChallenges: number;
   lastChallengeSummary: string | null;
+}
+
+export interface PlayerObjective {
+  id: string;
+  type: PlayerObjectiveType;
+  title: string;
+  summary: string;
+  issuedAtDayIndex: number;
+  resolveAtDayIndex: number;
+  baselineGuests: number;
+  baselineRating: number;
+  baselineProfit: number;
+  baselineOpenRideCount: number;
+  targetGuests: number;
+  targetRating: number;
+  targetProfit: number;
+  targetOpenRideCount: number;
+  rewardCash: number;
+  penaltyCash: number;
+}
+
+export interface PlayerObjectiveState {
+  activeObjective: PlayerObjective | null;
+  cooldownDaysRemaining: number;
+  completedObjectives: number;
+  failedObjectives: number;
+  lastObjectiveSummary: string | null;
 }
 
 export interface PlayerPrestigeAchievement {
@@ -439,6 +488,7 @@ export interface PlayerLeagueState {
   actions: PlayerLeagueActionState;
   watchlist: PlayerWatchlistState;
   rivalry: PlayerRivalChallengeState;
+  objectives: PlayerObjectiveState;
   prestige: PlayerPrestigeState;
 }
 

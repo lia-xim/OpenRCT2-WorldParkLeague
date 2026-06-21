@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { createInitialState } from "../src/domain/simulation";
 import {
   createInitialWatchlistState,
+  getAlertPriorityLabel,
   getLocalMarketSummary,
+  isImportantAlert,
   toggleWatchedRival,
   updateWatchlistForCycle,
 } from "../src/domain/watchlist";
@@ -180,6 +182,50 @@ describe("watchlist and local rivals", () => {
     expect(summary?.playerLeads).toBe(false);
     expect(summary?.shareGapToLeader).toBeCloseTo(0.022, 5);
     expect(summary?.playerShareOfCircuit).toBeCloseTo(0.06 / 0.27, 5);
+  });
+
+  it("classifies important alerts for quieter watchlist filtering", () => {
+    expect(
+      isImportantAlert({
+        id: "warn",
+        dayIndex: 10,
+        month: 0,
+        rivalId: "rival-1",
+        parkName: "Rival One",
+        type: "distress",
+        severity: "warning",
+        title: "Rival One is under distress.",
+        detail: "Pressure is building.",
+      })
+    ).toBe(true);
+
+    expect(
+      isImportantAlert({
+        id: "info",
+        dayIndex: 12,
+        month: 0,
+        rivalId: "rival-2",
+        parkName: "Rival Two",
+        type: "focus_assigned",
+        severity: "info",
+        title: "Rival Two is now a local rival.",
+        detail: "This is mainly a routing note.",
+      })
+    ).toBe(false);
+
+    expect(
+      getAlertPriorityLabel({
+        id: "success",
+        dayIndex: 14,
+        month: 0,
+        rivalId: "rival-3",
+        parkName: "Rival Three",
+        type: "rank_retake",
+        severity: "success",
+        title: "You just passed Rival Three.",
+        detail: "Momentum moved your way.",
+      })
+    ).toBe("Medium");
   });
 });
 

@@ -12,6 +12,8 @@ import {
   readPlayerSnapshot,
 } from "../domain/player";
 import { getActionDefinition, getPlayerActionSummary } from "../domain/playerActions";
+import { getDifficultyLabel, DIFFICULTY_PRESET_ORDER } from "../domain/difficulty";
+import { buildObjectiveTimelineRows, getActiveObjectiveSummary } from "../domain/objectives";
 import {
   buildPrestigeMilestones,
   buildYearlyRecap,
@@ -47,6 +49,8 @@ import {
   buyInvestmentForRival,
   readState,
   sellInvestmentForRival,
+  setDifficultyPreset,
+  syncStateToCurrentMonth,
   toggleWatchlistRivalById,
 } from "../state/repository";
 import {
@@ -74,12 +78,14 @@ import type {
   ParkHistoryMarker,
   ParkHistoryPoint,
   PlayerSnapshot,
+  DifficultyPreset,
   RivalPark,
   WorldParkLeagueState,
 } from "../types";
 
 const WINDOW_WIDTH = 980;
 const WINDOW_HEIGHT = 720;
+const ALERT_WINDOW_CLASSIFICATION = "world-park-league.alert";
 
 type LeaderboardSortMode =
   | "score"
@@ -101,6 +107,7 @@ const LEADERBOARD_SORT_OPTIONS = [
 ] as const;
 const LEADERBOARD_VIEW_OPTIONS = ["Overview", "Business"] as const;
 const UI_MODE_OPTIONS = ["Simple", "Advanced"] as const;
+const DIFFICULTY_OPTIONS = DIFFICULTY_PRESET_ORDER.map((preset) => getDifficultyLabel(preset));
 const TREND_METRIC_OPTIONS = [
   "Score",
   "Live form",
@@ -108,6 +115,8 @@ const TREND_METRIC_OPTIONS = [
   "Park size",
   "Cash reserve",
   "Monthly result",
+  "Park cash",
+  "League worth",
   "Rank",
 ] as const;
 const TREND_RANGE_OPTIONS = ["7d", "30d", "Season", "Year", "All"] as const;
@@ -120,6 +129,7 @@ let selectedNewsIndex = 0;
 let playerSummaryCard: StatCardModel = { rows: [] };
 let leagueSummaryCard: StatCardModel = { rows: [] };
 let selectedPanelModel: TextPanelModel = { rows: [] };
+let timelinePanelModel: TextPanelModel = { rows: [] };
 let trendChartModel: TrendChartModel = {
   metricLabel: "Score",
   summaryRows: [],
@@ -132,6 +142,7 @@ let trendMetricMode: HistoryMetricKey = "score";
 let trendHistoryLimit = 30;
 let trendValueMode: "absolute" | "indexed" = "absolute";
 let uiComplexityMode: UiComplexityMode = "simple";
+let lastShownAlertId: string | null = null;
 
 function resetWindowSelectionState(): void {
   selectedParkId = PLAYER_PARK_ID;
@@ -160,7 +171,7 @@ export function refreshMainWindow(): void {
 
   try {
     const snapshot = readPlayerSnapshot();
-    updateWindowContents(readState(snapshot), snapshot);
+    updateWindowContents(syncStateToCurrentMonth(snapshot).state, snapshot);
   } catch (error) {
     console.log(`[${PLUGIN_NAME}] refreshMainWindow failed: ${String(error)}`);
   }
@@ -186,7 +197,7 @@ export function openMainWindow(): void {
 
   try {
     const snapshot = readPlayerSnapshot();
-    const state = readState(snapshot);
+    const state = syncStateToCurrentMonth(snapshot).state;
     const existing = ui.getWindow(WINDOW_CLASSIFICATION);
     if (existing) {
       existing.bringToFront();
@@ -238,7 +249,7 @@ export function openMainWindow(): void {
           y: 34,
           width: 94,
           height: 18,
-          text: "Management",
+          text: "Money",
           onClick: () => {
             runWindowAction("capital-desk.click", () => openCapitalDeskWindow());
           },
@@ -250,7 +261,7 @@ export function openMainWindow(): void {
           y: 58,
           width: 94,
           height: 18,
-          text: "Watchlist",
+          text: "Rivals",
           onClick: () => {
             runWindowAction("watchlist-window.click", () => openWatchlistWindow());
           },
@@ -262,7 +273,7 @@ export function openMainWindow(): void {
           y: 82,
           width: 94,
           height: 18,
-          text: "Prestige",
+          text: "Goals",
           onClick: () => {
             runWindowAction("prestige-window.click", () => openPrestigeWindow());
           },
@@ -323,7 +334,24 @@ export function openMainWindow(): void {
             });
           },
         },
-        { type: "label", x: 478, y: 146, width: 84, height: 14, text: "Top boost above" },
+        { type: "label", x: 478, y: 146, width: 28, height: 14, text: "Diff:" },
+        {
+          type: "dropdown",
+          name: "difficulty-preset",
+          x: 508,
+          y: 144,
+          width: 54,
+          height: 14,
+          items: [...DIFFICULTY_OPTIONS],
+          selectedIndex: 1,
+          onChange: (index) => {
+            runWindowAction("difficulty-preset.change", () => {
+              const preset = DIFFICULTY_PRESET_ORDER[index] ?? "normal";
+              const freshSnapshot = readPlayerSnapshot();
+              updateWindowContents(setDifficultyPreset(preset, freshSnapshot), freshSnapshot);
+            });
+          },
+        },
         {
           type: "custom",
           name: "spotlight-banner",
@@ -527,17 +555,28 @@ export function openMainWindow(): void {
         },
         {
           type: "custom",
-          name: "trend-chart",
+          name: "timeline-panel",
           x: 590,
           y: 352,
           width: 372,
-          height: 186,
+          height: 48,
+          onDraw(g) {
+            drawTextPanel(this, g, timelinePanelModel);
+          },
+        },
+        {
+          type: "custom",
+          name: "trend-chart",
+          x: 590,
+          y: 404,
+          width: 372,
+          height: 134,
           onDraw(g) {
             drawTrendChart(this, g, trendChartModel);
           },
         },
 
-        { type: "groupbox", x: 8, y: 554, width: 564, height: 156, text: "Owner Portfolio" },
+        { type: "groupbox", x: 8, y: 554, width: 564, height: 156, text: "League Portfolio" },
         {
           type: "listview",
           name: "portfolio-list",
@@ -617,24 +656,88 @@ function updateWindowContents(state: WorldParkLeagueState, snapshot: PlayerSnaps
     const selectedRival = getSelectedRival(state, selectedEntry);
     const comparisonEntry = getComparisonEntry(state, selectedEntry);
 
+    syncControlState(window, state);
     renderSummary(window, state, snapshot, comparisonEntry);
     renderLeaderboard(window, state, snapshot);
     renderSelectedPanel(window, state, snapshot, playerBreakdown, selectedEntry, selectedRival, comparisonEntry);
     renderTrendPanel(
       window,
       state,
+      snapshot,
       selectedEntry,
       comparisonEntry
     );
     renderPortfolio(window, state);
     renderNews(window, state);
     updateTradeButtons(window, state, selectedRival);
+    maybeShowLeagueAlert(state, snapshot);
     refreshCapitalDeskWindow();
     refreshWatchlistWindow();
     refreshPrestigeWindow();
   } catch (error) {
     console.log(`[${PLUGIN_NAME}] updateWindowContents failed: ${String(error)}`);
   }
+}
+
+function maybeShowLeagueAlert(state: WorldParkLeagueState, snapshot: PlayerSnapshot): void {
+  const alert = state.world.newsFeed.find(
+    (item) =>
+      item.severity === "warning" &&
+      item.month >= snapshot.currentMonth - 1 &&
+      /pressure campaign|objective failed|misses|challenge|share shock|bankruptcy/i.test(
+        `${item.headline} ${item.detail}`
+      )
+  );
+  if (!alert || alert.id === lastShownAlertId) {
+    return;
+  }
+
+  lastShownAlertId = alert.id;
+  openLeagueAlertWindow(alert.headline, alert.detail);
+}
+
+function openLeagueAlertWindow(headline: string, detail: string): void {
+  if (typeof ui === "undefined") {
+    return;
+  }
+
+  const existing = ui.getWindow(ALERT_WINDOW_CLASSIFICATION);
+  if (existing) {
+    existing.close();
+  }
+
+  const detailLines = splitAlertDetailLines(detail);
+
+  ui.openWindow({
+    classification: ALERT_WINDOW_CLASSIFICATION,
+    title: "World Park League Alert",
+    width: 430,
+    height: 130,
+    minWidth: 430,
+    minHeight: 130,
+    maxWidth: 430,
+    maxHeight: 130,
+    widgets: [
+      { type: "groupbox", x: 8, y: 18, width: 414, height: 78, text: "Important league event" },
+      { type: "label", x: 18, y: 36, width: 394, height: 14, text: trimText(headline, 68) },
+      { type: "label", x: 18, y: 54, width: 394, height: 14, text: detailLines[0] ?? "" },
+      { type: "label", x: 18, y: 70, width: 394, height: 14, text: detailLines[1] ?? "" },
+      {
+        type: "button",
+        x: 322,
+        y: 104,
+        width: 90,
+        height: 18,
+        text: "OK",
+        onClick: () => {
+          const window = ui.getWindow(ALERT_WINDOW_CLASSIFICATION);
+          if (window) {
+            window.close();
+          }
+        },
+      },
+    ],
+  });
 }
 
 function renderSummary(
@@ -663,27 +766,20 @@ function renderSummary(
       : activeBoostSummary;
 
   if (uiComplexityMode === "simple") {
+    const objectiveLine = getActiveObjectiveSummary(state);
     playerSummaryCard = {
       rows: [
         {
           left: { label: "Rank", value: `${rank}/${state.world.leaderboard.length}` },
-          right: { label: "Next rival", value: comparisonEntry?.parkName ?? "Top spot" },
-        },
-        {
-          left: { label: "Crowd share", value: formatPercentText(state.player.marketShare) },
-          right: { label: "Guest boost", value: `x${state.player.guestCapModifier.toFixed(3)}` },
+          right: { label: "Gap", value: scoreGap > 0 ? `-${scoreGap.toFixed(1)}` : "Leading" },
         },
         {
           left: { label: "Park cash", value: formatCompactMoney(snapshot.cash) },
-          right: { label: "Owner cash", value: formatCompactMoney(state.player.owner.cash) },
+          right: { label: "Profit", value: formatCompactMoney(snapshot.lastMonthOperatingProfit) },
         },
         {
-          left: { label: "Monthly result", value: formatCompactMoney(snapshot.lastMonthOperatingProfit) },
-          right: { label: "Owner salary", value: formatCompactMoney(state.player.owner.lastSalary) },
-        },
-        {
-          left: { label: "Boost", value: combinedBoostSummary },
-          right: { label: "Prestige", value: `${state.player.prestige.prestigeScore} pts` },
+          left: { label: "Goal", value: trimText(objectiveLine, 24) },
+          right: { label: "Boost", value: `x${state.player.guestCapModifier.toFixed(2)}` },
         },
       ],
     };
@@ -692,19 +788,15 @@ function renderSummary(
       rows: [
         {
           left: { label: "Park field", value: `${state.world.leaderboard.length} parks` },
-          right: { label: "Guests in play", value: formatCompactCount(state.world.globalDemand) },
+          right: { label: "Demand", value: formatCompactCount(state.world.globalDemand) },
         },
         {
           left: { label: "World mood", value: describeMarketMood(state.world.economyIndex, state.world.tourismIndex) },
           right: { label: "Competition", value: describeCompetitionHeat(state.world.competitionHeat) },
         },
         {
-          left: { label: "Market growth", value: `x${state.world.structuralGrowthIndex.toFixed(2)}` },
-          right: { label: "Story beats", value: `${state.config.liveEventIntervalDays}d` },
-        },
-        {
-          left: { label: "Daily update", value: `${state.config.livePulseIntervalDays}d` },
-          right: { label: "League size", value: formatCompactMoney(totalMarketCap) },
+          left: { label: "Mode", value: getDifficultyLabel(state.config.difficultyPreset) },
+          right: { label: "Risk", value: trimText(nowFocus.tag, 20) },
         },
       ],
     };
@@ -723,11 +815,11 @@ function renderSummary(
       },
       {
         left: { label: "Park money", value: formatCompactMoney(snapshot.cash) },
-        right: { label: "Owner cash", value: formatCompactMoney(state.player.owner.cash) },
+        right: { label: "Portfolio", value: formatCompactMoney(state.player.investmentSummary.portfolioValue) },
       },
       {
-        left: { label: "Owner worth", value: formatCompactMoney(ownerNetWorth) },
-        right: { label: "Owner salary", value: formatCompactMoney(state.player.owner.lastSalary) },
+        left: { label: "League worth", value: formatCompactMoney(ownerNetWorth) },
+        right: { label: "League flow", value: formatCompactMoney(state.player.investmentSummary.lastMonthCashDelta) },
       },
       {
         left: { label: "Boost", value: combinedBoostSummary },
@@ -770,8 +862,6 @@ function renderLeaderboard(
   if (!widget) {
     return;
   }
-
-  syncLeaderboardControls(window);
 
   const entries = sortLeaderboardEntries(state.world.leaderboard, state, snapshot);
   const columns = getLeaderboardColumns(leaderboardViewMode);
@@ -831,10 +921,21 @@ function renderSelectedPanel(
 function renderTrendPanel(
   _window: Window,
   state: WorldParkLeagueState,
+  snapshot: PlayerSnapshot,
   selectedEntry: LeaderboardEntry | null,
   comparisonEntry: LeaderboardEntry | null
 ): void {
-  if (!selectedEntry) {
+  timelinePanelModel = {
+    caption: "Challenge timeline",
+    rows: buildObjectiveTimelineRows(state, snapshot),
+    emptyText: "No active tasks.",
+  };
+  const playerEntry = state.world.leaderboard.find((entry) => entry.isPlayer) ?? null;
+  const ownerOnlyMetric = isOwnerTrendMetric(trendMetricMode);
+  const effectiveSelectedEntry =
+    ownerOnlyMetric ? playerEntry ?? selectedEntry : selectedEntry;
+
+  if (!effectiveSelectedEntry) {
     trendChartModel = {
       metricLabel: getTrendMetricLabel(trendMetricMode, trendValueMode),
       summaryRows: [],
@@ -844,9 +945,16 @@ function renderTrendPanel(
     return;
   }
 
-  const playerEntry = state.world.leaderboard.find((entry) => entry.isPlayer) ?? null;
-  const benchmarkEntry = selectedEntry.isPlayer ? comparisonEntry : playerEntry;
-  const selectedSeries = getHistorySeries(state, selectedEntry.parkId, trendHistoryLimit);
+  const benchmarkEntry = ownerOnlyMetric
+    ? null
+    : effectiveSelectedEntry.isPlayer
+      ? comparisonEntry
+      : playerEntry;
+  const selectedSeries = getHistorySeries(
+    state,
+    ownerOnlyMetric ? PLAYER_PARK_ID : effectiveSelectedEntry.parkId,
+    trendHistoryLimit
+  );
   const benchmarkSeries = benchmarkEntry
     ? getHistorySeries(state, benchmarkEntry.parkId, trendHistoryLimit)
     : [];
@@ -856,14 +964,18 @@ function renderTrendPanel(
   );
   const selectedMarkers = getHistoryMarkers(
     state,
-    selectedEntry.parkId,
+    ownerOnlyMetric ? PLAYER_PARK_ID : effectiveSelectedEntry.parkId,
     Number.isFinite(minVisibleDayIndex) ? minVisibleDayIndex : 0
   );
   const selectedSummary = summarizeHistoryMetric(selectedSeries, trendMetricMode);
   const benchmarkSummary = benchmarkSeries.length > 0
     ? summarizeHistoryMetric(benchmarkSeries, trendMetricMode)
     : null;
-  const selectedLabel = selectedEntry.isPlayer ? "You" : trimText(selectedEntry.parkName, 18);
+  const selectedLabel = ownerOnlyMetric
+    ? "You"
+    : effectiveSelectedEntry.isPlayer
+      ? "You"
+      : trimText(effectiveSelectedEntry.parkName, 18);
   const benchmarkLabel = benchmarkEntry
     ? benchmarkEntry.isPlayer
       ? "You"
@@ -874,13 +986,17 @@ function renderTrendPanel(
   const latestMarker = selectedMarkers[selectedMarkers.length - 1] ?? null;
 
   trendChartModel = {
-    caption: selectedEntry.isPlayer
+    caption: ownerOnlyMetric
       ? uiComplexityMode === "simple"
-        ? "Your climb vs next rival"
-        : "Your development vs next target"
-      : uiComplexityMode === "simple"
-        ? `${trimText(selectedEntry.parkName, 20)} vs you`
-        : `${trimText(selectedEntry.parkName, 20)} vs your park`,
+        ? "Park finance"
+        : "Park finance trend"
+      : effectiveSelectedEntry.isPlayer
+        ? uiComplexityMode === "simple"
+          ? "Your climb vs next rival"
+          : "Your development vs next target"
+        : uiComplexityMode === "simple"
+          ? `${trimText(effectiveSelectedEntry.parkName, 20)} vs you`
+          : `${trimText(effectiveSelectedEntry.parkName, 20)} vs your park`,
     metricLabel: `${getTrendMetricLabel(trendMetricMode, trendValueMode)} | ${buildTrendSpanLabel(
       selectedSeries,
       benchmarkSeries
@@ -910,7 +1026,7 @@ function renderTrendPanel(
       benchmarkSummary,
       selectedSeries.length,
       benchmarkSeries.length,
-      selectedEntry,
+      effectiveSelectedEntry,
       benchmarkEntry,
       latestMarker,
       state
@@ -918,7 +1034,7 @@ function renderTrendPanel(
   };
 }
 
-function syncLeaderboardControls(window: Window): void {
+function syncControlState(window: Window, state: WorldParkLeagueState): void {
   const sortWidget = window.findWidget("leaderboard-sort") as DropdownWidget | null;
   if (sortWidget) {
     sortWidget.selectedIndex = sortModeToIndex(leaderboardSortMode);
@@ -947,6 +1063,11 @@ function syncLeaderboardControls(window: Window): void {
   const trendViewWidget = window.findWidget("trend-view") as DropdownWidget | null;
   if (trendViewWidget) {
     trendViewWidget.selectedIndex = trendViewToIndex(trendValueMode);
+  }
+
+  const difficultyWidget = window.findWidget("difficulty-preset") as DropdownWidget | null;
+  if (difficultyWidget) {
+    difficultyWidget.selectedIndex = difficultyPresetToIndex(state.config.difficultyPreset);
   }
 }
 
@@ -1175,6 +1296,10 @@ function uiModeToIndex(mode: UiComplexityMode): number {
   return mode === "advanced" ? 1 : 0;
 }
 
+function difficultyPresetToIndex(preset: DifficultyPreset): number {
+  return Math.max(0, DIFFICULTY_PRESET_ORDER.indexOf(preset));
+}
+
 function trendMetricFromIndex(index: number): HistoryMetricKey {
   switch (index) {
     case 1:
@@ -1188,6 +1313,10 @@ function trendMetricFromIndex(index: number): HistoryMetricKey {
     case 5:
       return "monthlyProfit";
     case 6:
+      return "ownerCash";
+    case 7:
+      return "ownerNetWorth";
+    case 8:
       return "rank";
     case 0:
     default:
@@ -1207,11 +1336,25 @@ function trendMetricToIndex(metric: HistoryMetricKey): number {
       return 4;
     case "monthlyProfit":
       return 5;
-    case "rank":
+    case "ownerCash":
       return 6;
+    case "ownerNetWorth":
+      return 7;
+    case "rank":
+      return 8;
     case "score":
     default:
       return 0;
+  }
+}
+
+function isOwnerTrendMetric(metric: HistoryMetricKey): boolean {
+  switch (metric) {
+    case "ownerCash":
+    case "ownerNetWorth":
+      return true;
+    default:
+      return false;
   }
 }
 
@@ -1321,8 +1464,8 @@ function updateTradeButtons(
     "trade-hint",
     `${isFocusRival(state, selectedRival.id) ? "Local rival" : "Global rival"} | ${
       investment
-        ? `Owner stake ${(investment.share * 100).toFixed(0)}%`
-        : "No owner stake"
+        ? `Park stake ${(investment.share * 100).toFixed(0)}%`
+        : "No park stake"
     }`
   );
 }
@@ -1414,18 +1557,16 @@ function buildPlayerDetailLines(
     : "Recap: keep the league running for a fuller year to unlock a richer story summary.";
 
   if (uiComplexityMode === "simple") {
+    const challengeOrGoal =
+      state.player.rivalry.activeChallenge
+        ? `Challenge: ${trimText(challengeLine, 82)}`
+        : `Goal: ${trimText(getActiveObjectiveSummary(state), 82)}`;
     return [
-      `You are rank ${state.player.currentRank ?? "-"} of ${state.world.leaderboard.length}.${comparisonEntry ? ` Next target: ${comparisonEntry.parkName}.` : ""}`,
-      `Crowd share: ${(state.player.marketShare * 100).toFixed(1)}%   Guest boost: x${state.player.guestCapModifier.toFixed(3)}   Form: ${describeMomentumBand(state.player.liveMomentum)}`,
-      `Guests: ${snapshot.guests.toLocaleString("en-US")}   Park rating: ${snapshot.parkRating}   Open rides: ${snapshot.openRideCount}/${snapshot.totalRideCount}`,
-      `Monthly result: ${formatSignedMoney(snapshot.lastMonthOperatingProfit)}   Park cash: ${formatMoney(snapshot.cash)}   Owner cash: ${formatMoney(state.player.owner.cash)}`,
-      `Owner worth: ${formatMoney(calculateOwnerNetWorth(state, snapshot))}   Park equity: ${formatMoney(playerEquityValue)}`,
-      `Board salary: ${formatMoney(state.player.owner.lastSalary)}   Owner flow: ${trimText(state.player.owner.lastCashFlowSummary ?? "No recent owner cashflow.", 38)}`,
+      `Rank ${state.player.currentRank ?? "-"} of ${state.world.leaderboard.length}${comparisonEntry ? ` | Next: ${trimText(comparisonEntry.parkName, 22)}` : ""}`,
+      `Cash ${formatMoney(snapshot.cash)} | Profit ${formatSignedMoney(snapshot.lastMonthOperatingProfit)} | Guests ${snapshot.guests.toLocaleString("en-US")}`,
+      challengeOrGoal,
       `Why: ${trimText(explanationLine, 82)}`,
-      `Goals: ${trimText(milestoneLine, 82)}`,
       `Rivalry: ${trimText(formatHeadToHeadLine(rivalrySummary), 82)}`,
-      `Challenge: ${trimText(challengeLine, 82)}`,
-      `Analyst: ${trimText(`${analystInsight.title} | ${analystInsight.summary}`, 82)}${watchlistSummary ? ` | ${trimText(watchlistSummary, 14)}` : ""}`,
     ];
   }
 
@@ -1433,9 +1574,9 @@ function buildPlayerDetailLines(
     `Rank: ${state.player.currentRank ?? "-"} of ${state.world.leaderboard.length}   Score: ${state.player.score.toFixed(1)} (${formatDecoratedCompactDelta(state.player.score - state.player.previousScore)})`,
     `Guests: ${snapshot.guests.toLocaleString("en-US")}   Rating: ${snapshot.parkRating}   Share: ${(state.player.marketShare * 100).toFixed(1)}%   Live form: ${describeMomentumBand(state.player.liveMomentum)}`,
     `Monthly profit/loss: ${formatSignedMoney(snapshot.lastMonthOperatingProfit)}   Revenue: ${formatMoney(snapshot.lastMonthRevenue)}   Park money: ${formatMoney(snapshot.cash)}`,
-    `Owner cash: ${formatMoney(state.player.owner.cash)}   Owner worth: ${formatMoney(calculateOwnerNetWorth(state, snapshot))}   Loan: ${formatMoney(snapshot.bankLoan)}`,
+    `Park cash: ${formatMoney(snapshot.cash)}   League worth: ${formatMoney(calculateOwnerNetWorth(state, snapshot))}   Loan: ${formatMoney(snapshot.bankLoan)}`,
     `Park equity value: ${formatMoney(playerEquityValue)}   Open rides: ${snapshot.openRideCount}/${snapshot.totalRideCount}`,
-    `Board salary: ${formatMoney(state.player.owner.lastSalary)}   Owner flow: ${trimText(state.player.owner.lastCashFlowSummary ?? "No recent owner cashflow.", 52)}`,
+    `League flow: ${trimText(state.player.owner.lastCashFlowSummary ?? "No recent league cashflow.", 72)}`,
     `Why: ${trimText(explanationLine, 106)}`,
     `Milestones: ${trimText(milestoneLine, 58)}   Drivers: ${trimText(scoreDrivers, 34)}`,
     `Rivalry: ${trimText(formatHeadToHeadLine(rivalrySummary), 106)}`,
@@ -1465,21 +1606,18 @@ function buildRivalDetailLines(
   const activeChallenge = state.player.rivalry.activeChallenge;
   const challengeLine =
     activeChallenge && activeChallenge.rivalId === selectedRival.id
-      ? `Live challenge: ${activeChallenge.title} | reward ${formatMoney(activeChallenge.rewardCash)}`
+      ? `Live challenge: ${activeChallenge.title} | reward ${formatMoney(activeChallenge.rewardCash)} | risk ${formatMoney(activeChallenge.penaltyCash)}`
       : `Rival challenge: ${trimText(state.player.rivalry.lastChallengeSummary ?? "No direct duel right now.", 62)}`;
 
   if (uiComplexityMode === "simple") {
     return [
-      `${localRival ? "Local rival" : watched ? "Tracked rival" : "Global rival"}   ${getArchetypeLabel(selectedRival.archetype)}   ${getStrategyLabel(selectedRival.status.strategyFocus)}`,
-      `Rank ${selectedEntry.rank}   Score ${selectedEntry.score.toFixed(1)}   Form ${describeMomentumBand(selectedRival.momentum)}`,
-      `Crowd share ${(selectedEntry.marketShare * 100).toFixed(1)}%   Guests ${selectedEntry.monthlyVisitors.toLocaleString("en-US")}   Risk ${selectedRival.risk.toFixed(0)}`,
-      `Monthly result ${formatSignedMoney(selectedRival.finance.monthlyProfit)}   Cash reserve ${formatMoney(selectedRival.finance.cashReserve)}`,
+      `${localRival ? "Local rival" : watched ? "Tracked rival" : "Global rival"} | Rank ${selectedEntry.rank} | Score ${selectedEntry.score.toFixed(1)} | ${describeMomentumBand(selectedRival.momentum)}`,
+      `People ${(selectedEntry.marketShare * 100).toFixed(1)}% | Profit ${formatSignedMoney(selectedRival.finance.monthlyProfit)} | Risk ${selectedRival.risk.toFixed(0)}`,
       investment
-        ? `Your stake: ${(investment.share * 100).toFixed(0)}%   Role: ${getInvestmentInfluenceLabel(investment.share)}`
-        : `Track: ${watched ? "On" : "Off"}   Local circuit: ${localRival ? getFocusRivalGapLabel(state, selectedRival.id) : "No"}`,
+        ? `Your stake ${(investment.share * 100).toFixed(0)}% | ${getInvestmentInfluenceLabel(investment.share)}`
+        : `Track ${watched ? "On" : "Off"} | Local circuit ${localRival ? getFocusRivalGapLabel(state, selectedRival.id) : "No"}`,
       `Head-to-head: ${trimText(formatHeadToHeadLine(rivalrySummary), 74)}`,
-      challengeLine,
-      `${selectedRival.status.lastHeadline ?? `${selectedRival.name} is competing in ${selectedEntry.regionLabel}.`}`,
+      trimText(challengeLine, 82),
     ];
   }
 
@@ -1709,6 +1847,10 @@ function getTrendMetricLabel(
       return `Monthly profit${suffix}`;
     case "money":
       return `Cash reserve${suffix}`;
+    case "ownerCash":
+      return `Park cash${suffix}`;
+    case "ownerNetWorth":
+      return `League worth${suffix}`;
     case "rank":
       return "Rank";
     case "score":
@@ -1763,6 +1905,8 @@ function projectTrendValues(
       ? Math.max(0.005, Math.abs(base))
       : metric === "score" || metric === "momentum"
         ? Math.max(1, Math.abs(base))
+        : metric === "ownerCash" || metric === "ownerNetWorth"
+          ? Math.max(100, Math.abs(base))
         : Math.max(10, Math.abs(base));
   return values.map((value) => 100 + ((value - base) / scaleBase) * 100);
 }
@@ -1893,6 +2037,8 @@ function formatTrendMetric(metric: HistoryMetricKey, value: number): string {
     case "companyValue":
     case "monthlyProfit":
     case "money":
+    case "ownerCash":
+    case "ownerNetWorth":
       return formatCompactMoney(value);
     case "rank":
       return `#${Math.max(1, Math.round(value))}`;
@@ -1935,7 +2081,13 @@ function formatTrendDelta(metric: HistoryMetricKey, value: number): string {
     );
   }
 
-  if (metric === "companyValue" || metric === "monthlyProfit" || metric === "money") {
+  if (
+    metric === "companyValue" ||
+    metric === "monthlyProfit" ||
+    metric === "money" ||
+    metric === "ownerCash" ||
+    metric === "ownerNetWorth"
+  ) {
     return formatSignedCompactMoney(value);
   }
 
@@ -1964,7 +2116,13 @@ function formatTrendGap(metric: HistoryMetricKey, value: number): string {
     );
   }
 
-  if (metric === "companyValue" || metric === "monthlyProfit" || metric === "money") {
+  if (
+    metric === "companyValue" ||
+    metric === "monthlyProfit" ||
+    metric === "money" ||
+    metric === "ownerCash" ||
+    metric === "ownerNetWorth"
+  ) {
     return formatSignedCompactMoney(value);
   }
 
@@ -2365,6 +2523,18 @@ function describeMomentumBand(momentum: number): string {
     return "Cooling";
   }
   return "Steady";
+}
+
+function splitAlertDetailLines(value: string): [string, string] {
+  if (value.length <= 72) {
+    return [value, ""];
+  }
+
+  const splitIndex = Math.max(36, value.lastIndexOf(" ", 72));
+  return [
+    trimText(value.slice(0, splitIndex).trim(), 72),
+    trimText(value.slice(splitIndex).trim(), 72),
+  ];
 }
 
 function trimText(value: string, maxLength: number): string {

@@ -166,6 +166,30 @@ export function getFocusRivals(state: WorldParkLeagueState): RivalPark[] {
     .filter((rival): rival is RivalPark => !!rival);
 }
 
+export function isImportantAlert(alert: WatchlistAlert): boolean {
+  if (alert.severity === "warning") {
+    return true;
+  }
+
+  return (
+    alert.type === "rank_retake" ||
+    alert.type === "rank_overtake" ||
+    alert.type === "distress" ||
+    alert.type === "exit" ||
+    alert.type === "scandal"
+  );
+}
+
+export function getAlertPriorityLabel(alert: WatchlistAlert): string {
+  if (alert.severity === "warning") {
+    return "High";
+  }
+  if (isImportantAlert(alert)) {
+    return "Medium";
+  }
+  return "Low";
+}
+
 export interface LocalMarketSummary {
   circuitSize: number;
   circuitShare: number;

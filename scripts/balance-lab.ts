@@ -31,6 +31,13 @@ interface BalanceLabReport {
   baseline: BalanceLabEvaluation;
   best: BalanceLabEvaluation;
   topCandidates: BalanceLabEvaluation[];
+  recommendation: {
+    shouldApply: boolean;
+    improvementVsBaselinePercent: number;
+    candidateId: string;
+    override: Partial<SimulationConfig>;
+    reason: string;
+  };
 }
 
 interface WorkerRequest {
@@ -102,6 +109,7 @@ async function main(): Promise<void> {
     baseline,
     best: sortedRefined[0] ?? baseline,
     topCandidates: sortedRefined.slice(0, Math.max(5, coarse.topCount)),
+    recommendation: buildRecommendation(sortedRefined[0] ?? baseline, baseline),
   };
 
   console.log(JSON.stringify(report, null, 2));
@@ -229,6 +237,35 @@ function resolveWorkerCount(requested: number): number {
   }
 
   return Math.max(1, Math.min(cpus().length, 6));
+}
+
+function buildRecommendation(
+  best: BalanceLabEvaluation,
+  baseline: BalanceLabEvaluation
+): BalanceLabReport["recommendation"] {
+  const improvement =
+    baseline.objective.total <= 0
+      ? 0
+      : ((baseline.objective.total - best.objective.total) / baseline.objective.total) * 100;
+  const roundedImprovement = Math.round(improvement * 100) / 100;
+  const isDifferentCandidate = best.candidate.id !== baseline.candidate.id;
+  const shouldApply = isDifferentCandidate && roundedImprovement >= 3;
+
+  return {
+    shouldApply,
+    improvementVsBaselinePercent: roundedImprovement,
+    candidateId: best.candidate.id,
+    override: best.candidate.override,
+    reason: shouldApply
+      ? `Best candidate beats baseline by ${roundedImprovement.toFixed(
+          2
+        )}% on the current objective, so it is strong enough to review for live adoption.`
+      : isDifferentCandidate
+        ? `Best candidate only improves baseline by ${roundedImprovement.toFixed(
+            2
+          )}%, so keep the current defaults until real-save QA confirms the gain.`
+        : "Baseline is still the best candidate in the current search space.",
+  };
 }
 
 function readIntegerEnv(name: string, fallback: number): number {

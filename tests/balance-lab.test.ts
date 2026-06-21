@@ -12,20 +12,32 @@ describe("balance lab candidate generation", () => {
     const ids = candidates.map((candidate) => candidate.id);
 
     expect(ids).toContain("baseline");
+    expect(candidates.length).toBe(325);
     expect(new Set(ids).size).toBe(ids.length);
+    expect(candidates.some((candidate) => candidate.override.guestCapUpperClamp === 1.16)).toBe(true);
+    expect(
+      candidates.some(
+        (candidate) =>
+          candidate.id === "d007-c030-sg150-ss100-gc-tight-anti-aggressive" &&
+          candidate.override.catchUpPlayerDominanceScale === 1.08 &&
+          candidate.override.catchUpPlayerGrowthScale === 0.026 &&
+          candidate.override.catchUpTenureScale === 0.014 &&
+          candidate.override.catchUpLocalRivalScale === 1.5
+      )
+    ).toBe(true);
   });
 
-  it("expands top candidates with investment and prestige restraint variants", () => {
+  it("expands top candidates with owner-return and supporting-boost variants", () => {
     const expanded = expandEconomicCandidates(
       buildBalanceLabCandidates().filter((candidate) => candidate.id === "baseline")
     );
 
     expect(expanded.some((candidate) => candidate.id === "baseline")).toBe(true);
     expect(
-      expanded.some((candidate) => candidate.override.investmentDividendMultiplier === 0.72)
+      expanded.some((candidate) => candidate.override.investmentDividendMultiplier === 0.42)
     ).toBe(true);
     expect(
-      expanded.some((candidate) => candidate.override.prestigeRewardBoostMultiplier === 0.78)
+      expanded.some((candidate) => candidate.override.featuredGuestMultiplier === 1.18)
     ).toBe(true);
   });
 });
@@ -41,37 +53,54 @@ describe("balance lab scoring", () => {
         averageTopScoreGap: 4.2,
         averageGuestCap: 1.14,
         averageRankVolatility: 0.32,
+        averageMonthsAtTop: 14,
+        averageLongestTopStreak: 7,
       },
       dominant: {
         averageRank: 1.8,
         dominanceMonthRate: 0.62,
         averageTopScoreGap: 6.1,
         averageGuestCap: 1.3,
+        averageMonthsAtTop: 24,
+        averageLongestTopStreak: 12,
       },
-      averageRoi: 0.34,
-      largeStakeRoi: 0.4,
+      averageRoi: 0.24,
+      largeStakeRoi: 0.28,
     });
     const runaway = createPayload({
       weak: { averageRank: 9, dominanceMonthRate: 0.36, averageGuestCap: 0.66 },
-      mid: { averageRank: 2.2, dominanceMonthRate: 0.74, averageRankVolatility: 0.11 },
+      mid: {
+        averageRank: 2.2,
+        dominanceMonthRate: 0.74,
+        averageRankVolatility: 0.11,
+        averageMonthsAtTop: 20,
+        averageLongestTopStreak: 11,
+      },
       strong: {
         averageRank: 1.1,
         dominanceMonthRate: 0.94,
         averageTopScoreGap: 10.5,
         averageGuestCap: 1.55,
         averageRankVolatility: 0.08,
+        averageMonthsAtTop: 34,
+        averageLongestTopStreak: 23,
       },
       dominant: {
         averageRank: 1,
         dominanceMonthRate: 0.99,
         averageTopScoreGap: 13,
         averageGuestCap: 1.72,
+        averageMonthsAtTop: 46,
+        averageLongestTopStreak: 34,
       },
-      averageRoi: 0.78,
-      largeStakeRoi: 0.92,
+      averageRoi: 0.52,
+      largeStakeRoi: 0.61,
     });
 
     expect(scoreBalancePayload(runaway).total).toBeGreaterThan(scoreBalancePayload(healthy).total);
+    expect(scoreBalancePayload(runaway).stickinessPenalty).toBeGreaterThan(
+      scoreBalancePayload(healthy).stickinessPenalty
+    );
   });
 });
 

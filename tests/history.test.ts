@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { PLAYER_PARK_ID } from "../src/config";
-import { getHistorySeries, recordHistorySnapshot } from "../src/domain/history";
+import {
+  getHistorySeries,
+  getHistoryMetricValue,
+  summarizeHistoryMetric,
+  recordHistorySnapshot,
+} from "../src/domain/history";
 import { createInitialState } from "../src/domain/simulation";
 import type { LeaderboardEntry, PlayerSnapshot } from "../src/types";
 
@@ -66,5 +71,25 @@ describe("history retention", () => {
     expect(series.at(-1)?.dayIndex).toBe(500);
     expect(series.some((point) => point.month === 6)).toBe(true);
     expect(series.some((point) => point.dayIndex >= 450)).toBe(true);
+  });
+
+  it("tracks park cash and league worth for player-side finance trends", () => {
+    const state = createInitialState(0, "Finance Test Park");
+
+    for (let dayIndex = 0; dayIndex <= 40; dayIndex += 10) {
+      const snapshot = createSnapshot(dayIndex);
+      state.world.leaderboard = [createPlayerEntry(snapshot)];
+      recordHistorySnapshot(state, snapshot, dayIndex);
+    }
+
+    const series = getHistorySeries(state, PLAYER_PARK_ID, 100);
+    const latest = series.at(-1);
+    const summary = summarizeHistoryMetric(series, "ownerCash");
+
+    expect(series.length).toBeGreaterThan(0);
+    expect(latest?.ownerCash).toBe(createSnapshot(40).cash);
+    expect((latest?.ownerNetWorth ?? 0) >= (latest?.ownerCash ?? 0)).toBe(true);
+    expect(getHistoryMetricValue(latest!, "ownerCash")).toBe(latest?.ownerCash);
+    expect(summary?.current).toBe(latest?.ownerCash);
   });
 });
