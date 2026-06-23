@@ -48,6 +48,16 @@ describe("player league actions", () => {
     expect(result.state.player.actions.activeActions[0]?.type).toBe("pr_blitz");
   });
 
+  it("launches a rival countermeasure as a normal park-cash action", () => {
+    const state = createInitialState(0, "Action Park");
+    const result = launchPlayerLeagueAction(state, createSnapshot(), "rival_counter_pr");
+
+    expect(result.ok).toBe(true);
+    expect(result.cashDelta).toBe(-10_000);
+    expect(result.state.player.actions.activeActions[0]?.type).toBe("rival_counter_pr");
+    expect(result.state.player.actions.activeActions[0]?.momentumBonus).toBeGreaterThan(2);
+  });
+
   it("lets active actions influence live pulses", () => {
     const initial = createInitialState(0, "Action Park");
     const monthly = simulateMonth(initial, createSnapshot(), 0).nextState;

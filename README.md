@@ -28,8 +28,10 @@ It adds:
 - a `50`-park living league that updates every day
 - local rivals that compete directly with you for attention
 - difficulty presets from relaxed to punishing
-- active target tasks with deadlines, rewards, and real penalties
+- active target tasks with deadlines, construction goals, rewards, and real penalties
 - a first-run guide that explains what matters before the player sees the full economy
+- an in-game help window for the core terms and next action
+- visible park experience events with real guest waves, named VIP critics, balloons, a People tracker, and review outcomes
 - prestige, yearly recaps, achievements, and long-term progression
 - a park-cash economy layer with one unified rival portfolio, real payouts, losses, penalties, and pressure
 - a management layer with buybacks, governance, and rewards
@@ -53,8 +55,9 @@ This plugin is for you if you want:
 | Area | What it adds |
 | --- | --- |
 | Global competition | 50 simulated parks, daily movement, major world events, mergers, bankruptcies, recoveries, expansion waves |
-| Player pressure | difficulty presets, active target tasks, people share, guest-cap pressure, score races, local rivals, spotlight and buzz swings |
-| Management layer | park-cash-funded rival portfolio, dividends, exits, negative investment shocks, challenge penalties, buybacks, governance pressure |
+| Player pressure | difficulty presets, build objectives, active target tasks, people share, guest-cap pressure, score races, local rivals, spotlight and buzz swings |
+| Park experience | Press Days, School Trips, Influencer Events, Regional Fan Weekends, VIP critics, visual triggers, real guest waves, relevant people tracker |
+| Management layer | park-cash-funded rival portfolio, dividends, exits, negative investment shocks, challenge penalties, buybacks, governance pressure, direct counter-actions |
 | Progression | prestige goals, achievement rewards, yearly recap, records, trend charts, park-finance trend visibility, progress filters |
 | Rival storytelling | first-run guide, primary rivals, watchlist alerts, head-to-head challenges, paced warning popups, analyst guidance, league headlines |
 
@@ -84,17 +87,28 @@ That is the fantasy: not just a better spreadsheet, but a better story.
 - direct local rivals that mirror your competitive lane
 - head-to-head challenge system with rewards and pressure
 - visible warning popups when rivals attack your position
+- counter-actions such as `Counter Campaign` and `Local Push`
 - rivalry tracking in both the main UI and prestige flows
 - alerts when a rival surges, weakens, or becomes vulnerable
 
 ### Difficulty and active objectives
 
 - choose `Casual`, `Normal`, `Hard`, or `Tycoon` from the main window
-- receive timed park tasks such as guest growth, rating recovery, profit pushes, or expansion briefs
+- receive timed park tasks such as guest growth, rating recovery, profit pushes, expansion briefs, coaster briefs, or capacity pushes
+- see a save-aware difficulty recommendation when the current preset no longer fits the park
 - complete objectives for park-cash rewards and temporary momentum
 - fail objectives and lose real park cash while board and investor confidence take a hit
 - track active objectives and rival pressure in the compact challenge timeline
 - use `npm run analyze:balance:difficulty` during development to compare all difficulty presets across the same scenarios
+
+### Park-visible moments
+
+- league boosts can now trigger park events such as `Press Day`, `School Trip`, `Influencer Event`, and `Regional Fan Weekend`
+- these events spawn real OpenRCT2 guests and one-shot visual triggers such as balloons and flare effects
+- VIP critics can enter as named guests and later publish a review based on real park quality
+- relevant people such as critics, press leads, creators, school leads, and fan-weekend captains are available in a manual `People` window with a locate button
+- strong reviews reward park cash and temporary momentum; bad reviews cost cash and hurt confidence
+- active park events appear in the main timeline so the player can see what is happening
 
 ### Management and economy
 
@@ -103,7 +117,7 @@ That is the fantasy: not just a better spreadsheet, but a better story.
 - lose real park cash when head-to-head rival challenges fail
 - track park cash, portfolio value, league worth, and active pressure in the live UI
 - manage equity offers, buybacks, and governance pressure
-- use management actions to push for momentum or stability
+- use management actions to push for momentum, stability, construction focus, or rival counterplay
 
 ### Progression and prestige
 
@@ -148,6 +162,8 @@ The main window is designed around two reading styles:
 
 The default view now focuses on the next actionable things: current rank, park cash, profit, active goal, boost state, difficulty, current risk, and the weakest score driver. Deeper finance and rival context lives behind `Money`, `Rivals`, and `Goals`.
 
+If a term is unclear, open `Help` from the main window. It explains the core metrics and tells the player where to react to rival pressure or active goals.
+
 On the first open, the plugin shows a short quick-start window. Important warning popups are then paced so major rival attacks and failed objectives are visible without spamming the player.
 
 The shipped release UI is the real player-facing design.  
@@ -180,6 +196,7 @@ See:
 
 - [Balance review](./docs/balance-review.md)
 - [Economy design](./docs/economy-design.md)
+- [Outstanding experience card](./docs/outstanding-experience-card.md)
 - [Product vision](./docs/product-vision.md)
 - [Requirements tracker](./docs/requirements-tracker.md)
 

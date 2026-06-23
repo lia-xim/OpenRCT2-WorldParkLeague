@@ -13,7 +13,7 @@ import { PLUGIN_NAME } from "../config";
 import type { PlayerSnapshot, WorldParkLeagueState } from "../types";
 
 const WATCHLIST_WINDOW_CLASSIFICATION = "world-park-league.watchlist";
-const WATCHLIST_WINDOW_TITLE = `${PLUGIN_NAME} | Watchlist`;
+const WATCHLIST_WINDOW_TITLE = `${PLUGIN_NAME} | Rivals`;
 
 let selectedTrackedRivalId: string | null = null;
 let trackedRowIds: string[] = [];
@@ -51,7 +51,7 @@ export function openWatchlistWindow(): void {
       alertRowIds = [];
     },
     widgets: [
-      { type: "groupbox", x: 8, y: 18, width: 544, height: 118, text: "Local Rivals" },
+      { type: "groupbox", x: 8, y: 18, width: 544, height: 118, text: "Main Rivals" },
       {
         type: "listview",
         name: "focus-list",
@@ -74,7 +74,7 @@ export function openWatchlistWindow(): void {
       },
       { type: "label", name: "focus-hint", x: 18, y: 114, width: 524, height: 14, text: "" },
 
-      { type: "groupbox", x: 8, y: 142, width: 544, height: 134, text: "Watchlist" },
+      { type: "groupbox", x: 8, y: 142, width: 544, height: 134, text: "Tracked Parks" },
       {
         type: "listview",
         name: "tracked-list",
@@ -118,7 +118,7 @@ export function openWatchlistWindow(): void {
       },
       { type: "label", name: "tracked-hint", x: 154, y: 240, width: 388, height: 14, text: "" },
 
-      { type: "groupbox", x: 8, y: 282, width: 544, height: 258, text: "Recent Alerts" },
+      { type: "groupbox", x: 8, y: 282, width: 544, height: 258, text: "Rival Alerts" },
       {
         type: "button",
         name: "alert-filter",
@@ -288,8 +288,8 @@ function updateWatchlistContents(
   setLabel(
     window,
     "focus-hint",
-    focusRivals.length > 0
-      ? `Local rivals mirror your immediate market fight. They get a small pressure boost to stay relevant around your rank.`
+      focusRivals.length > 0
+      ? `These are your closest active competitors. They scale around your rank so the race stays alive.`
       : "Your local rival circuit will form after the league settles around your current rank."
   );
   setLabel(

@@ -1,4 +1,4 @@
-import type { DifficultyPreset } from "../types";
+import type { DifficultyPreset, PlayerSnapshot, WorldParkLeagueState } from "../types";
 
 export interface DifficultyProfile {
   preset: DifficultyPreset;
@@ -98,4 +98,42 @@ export function normalizeDifficultyPreset(value: unknown): DifficultyPreset {
   return value === "casual" || value === "hard" || value === "tycoon" || value === "normal"
     ? value
     : "normal";
+}
+
+export function recommendDifficultyPreset(
+  state: WorldParkLeagueState,
+  snapshot: PlayerSnapshot
+): DifficultyPreset {
+  const rank = state.player.currentRank ?? state.world.leaderboard.length;
+  const score = state.player.score;
+  const cash = snapshot.cash;
+  const guests = snapshot.guests;
+  const profit = snapshot.lastMonthOperatingProfit;
+
+  if (cash < 8_000 || guests < 450 || snapshot.parkRating < 700 || profit < -4_000) {
+    return "casual";
+  }
+
+  if (rank <= 2 && score >= 84 && cash > 180_000 && guests > 2_800) {
+    return "tycoon";
+  }
+
+  if (rank <= 8 && score >= 74 && cash > 55_000 && guests > 1_400) {
+    return "hard";
+  }
+
+  return "normal";
+}
+
+export function getDifficultyRecommendationLine(
+  state: WorldParkLeagueState,
+  snapshot: PlayerSnapshot
+): string {
+  const recommended = recommendDifficultyPreset(state, snapshot);
+  const active = state.config.difficultyPreset;
+  if (recommended === active) {
+    return `Difficulty fits this save: ${getDifficultyLabel(active)}.`;
+  }
+
+  return `Suggested difficulty for this save: ${getDifficultyLabel(recommended)}. Current: ${getDifficultyLabel(active)}.`;
 }

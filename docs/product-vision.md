@@ -30,6 +30,8 @@ Der Spieler soll das Gefuehl haben:
 - Awards und Prestige
 - Marktgroesse und Marktanteile
 - Investments und Beteiligungen
+- aktive Bauziele und Rivalen-Gegenmassnahmen, die direkt in den normalen Parkbau eingreifen
+- park-sichtbare Liga-Momente wie Pressetag, Schulausflug, Influencer-Event, Fan-Weekend und VIP-Kritiker
 - optional spaeter komplexere Eigentuemer-/Brokerage-Systeme, aber nur wenn der Park-Cash-Kern stabil bleibt
 - Fusionen und Uebernahmen
 - Krisen, Skandale und Boom-Phasen
@@ -65,6 +67,10 @@ Der Spieler soll auch als Nummer 1 nicht "fertig" sein. Top-Ranking erzeugt neue
 - Besucher-Malus fuer schwache Parks
 - Konkurrenten koennen aufgekauft werden
 - Beteiligungen koennen Gewinn oder Verlust erzeugen
+- Rivalenangriffe sollen sichtbar sein und mit konkreten Gegenaktionen beantwortet werden koennen
+- Ziele sollen nicht nur Finanzwerte sein, sondern auch echte Bauaufgaben wie Kapazitaet oder Coaster-Qualitaet
+- grosse Liga-Momente sollen im Park sichtbar werden, nicht nur als Zahl oder Newszeile
+- VIPs/Kritiker sollen als echte Gaeste auftauchen und spaeter Review-Folgen erzeugen
 - grosse Rivalen koennen kleinere schlucken
 - Fusionen sollen News erzeugen
 - Investoren koennen Druck auf den Spielerpark ausueben

@@ -75,6 +75,45 @@ const ACTION_DEFINITIONS: Record<PlayerLeagueActionType, ActionDefinition> = {
     momentumBonus: 1.4,
     safetyShield: 0.2,
   },
+  rival_counter_pr: {
+    type: "rival_counter_pr",
+    title: "Counter Campaign",
+    summary: "A direct answer to rival pressure that protects your position and restores local confidence.",
+    story: "You answer a rival attack with local press, guest reassurance and a clear reason to stay loyal.",
+    bestUse: "Best after an attack popup, during a direct rival challenge, or when a local rival is closing fast.",
+    upfrontCost: 10_000,
+    daysRemaining: 12,
+    scoreBonus: 2.2,
+    guestCapBonus: 0.018,
+    momentumBonus: 2.8,
+    safetyShield: 0.25,
+  },
+  local_discount_push: {
+    type: "local_discount_push",
+    title: "Local Push",
+    summary: "A focused local offer that brings more guests in quickly without becoming a full festival.",
+    story: "You run a short local deal around the park entrance and transport routes to pull undecided visitors in.",
+    bestUse: "Best when you need visible guests now but cannot afford the larger festival play.",
+    upfrontCost: 9_000,
+    daysRemaining: 9,
+    scoreBonus: 1.4,
+    guestCapBonus: 0.035,
+    momentumBonus: 1.7,
+    safetyShield: 0,
+  },
+  build_focus: {
+    type: "build_focus",
+    title: "Build Focus",
+    summary: "A planning push that helps park score while you are working toward construction goals.",
+    story: "You concentrate staff, operations and marketing around a visible expansion plan.",
+    bestUse: "Best when an expansion or coaster objective is active and you need time to build cleanly.",
+    upfrontCost: 11_000,
+    daysRemaining: 21,
+    scoreBonus: 2,
+    guestCapBonus: 0.012,
+    momentumBonus: 1.1,
+    safetyShield: 0.1,
+  },
 };
 
 const ACTION_ORDER: PlayerLeagueActionType[] = [
@@ -82,6 +121,9 @@ const ACTION_ORDER: PlayerLeagueActionType[] = [
   "guest_festival",
   "safety_campaign",
   "efficiency_push",
+  "rival_counter_pr",
+  "local_discount_push",
+  "build_focus",
 ];
 
 export interface PlayerActionEffects {
@@ -225,6 +267,18 @@ export function getPlayerActionSummary(state: WorldParkLeagueState): string {
 }
 
 function getActionImpactLabel(definition: ActionDefinition): string {
+  if (definition.type === "rival_counter_pr") {
+    return "Counters rival";
+  }
+
+  if (definition.type === "local_discount_push") {
+    return "Fast guests";
+  }
+
+  if (definition.type === "build_focus") {
+    return "Build goal";
+  }
+
   if (definition.type === "safety_campaign") {
     return "Safety shield";
   }

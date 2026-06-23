@@ -22,6 +22,10 @@ import {
   acceptBoardProposal,
   declineBoardProposal,
 } from "../domain/governance";
+import {
+  createInitialPlayerExperienceState,
+  markExperienceEventPresented as markExperienceEventPresentedInState,
+} from "../domain/experience";
 import { normalizeDifficultyPreset } from "../domain/difficulty";
 import {
   buyInvestmentByRivalId,
@@ -65,6 +69,10 @@ import type {
   PlayerRivalChallenge,
   PlayerPrestigeState,
   PlayerLeagueActionType,
+  PlayerExperienceEvent,
+  PlayerExperienceState,
+  PlayerRelevantGuest,
+  PlayerRelevantGuestRole,
   PlayerOwnerState,
   PlayerUiState,
   PlayerRivalChallengeState,
@@ -191,6 +199,17 @@ export function recordPopupShown(
   const state = readState(snapshot);
   state.player.ui.lastPopupNewsId = newsId;
   state.player.ui.lastPopupDayIndex = Math.max(0, Math.round(dayIndex));
+  saveState(state);
+  return state;
+}
+
+export function markExperienceEventPresented(
+  eventId: string,
+  relevantGuests: PlayerRelevantGuest[],
+  snapshot: PlayerSnapshot = readPlayerSnapshot()
+): WorldParkLeagueState {
+  const state = readState(snapshot);
+  markExperienceEventPresentedInState(state, eventId, relevantGuests);
   saveState(state);
   return state;
 }
@@ -405,7 +424,7 @@ export function declineGovernanceProposal(
 }
 
 export function startLeagueAction(
-  actionType: "pr_blitz" | "guest_festival" | "safety_campaign" | "efficiency_push",
+  actionType: PlayerLeagueActionType,
   snapshot: PlayerSnapshot = readPlayerSnapshot()
 ): { state: WorldParkLeagueState; ok: boolean; message: string } {
   const { state } = syncStateToCurrentMonth(snapshot);
@@ -662,6 +681,7 @@ export function migrateState(
       rivalry: normalizeRivalry(candidate.player.rivalry, freshState.player.rivalry),
       objectives: normalizeObjectives(candidate.player.objectives, freshState.player.objectives),
       ui: normalizePlayerUi(candidate.player.ui, freshState.player.ui),
+      experience: normalizeExperience(candidate.player.experience, freshState.player.experience),
       prestige: normalizePrestige(candidate.player.prestige, freshState.player.prestige),
     },
   };
@@ -1218,7 +1238,10 @@ function normalizeActions(
               action.type === "pr_blitz" ||
               action.type === "guest_festival" ||
               action.type === "safety_campaign" ||
-              action.type === "efficiency_push"
+              action.type === "efficiency_push" ||
+              action.type === "rival_counter_pr" ||
+              action.type === "local_discount_push" ||
+              action.type === "build_focus"
                 ? action.type
                 : "pr_blitz",
             title: typeof action.title === "string" ? action.title : "League action",
@@ -1414,7 +1437,9 @@ function normalizeObjectives(
           source.activeObjective.type === "guest_growth" ||
           source.activeObjective.type === "rating_hold" ||
           source.activeObjective.type === "profit_push" ||
-          source.activeObjective.type === "ride_expansion"
+          source.activeObjective.type === "ride_expansion" ||
+          source.activeObjective.type === "coaster_brief" ||
+          source.activeObjective.type === "capacity_push"
             ? source.activeObjective.type
             : "guest_growth",
         title:
@@ -1449,6 +1474,16 @@ function normalizeObjectives(
           typeof source.activeObjective.baselineOpenRideCount === "number"
             ? Math.max(0, Math.round(source.activeObjective.baselineOpenRideCount))
             : 0,
+        baselineTotalRideCount:
+          typeof source.activeObjective.baselineTotalRideCount === "number"
+            ? Math.max(0, Math.round(source.activeObjective.baselineTotalRideCount))
+            : typeof source.activeObjective.baselineOpenRideCount === "number"
+              ? Math.max(0, Math.round(source.activeObjective.baselineOpenRideCount))
+              : 0,
+        baselineAverageRideExcitement:
+          typeof source.activeObjective.baselineAverageRideExcitement === "number"
+            ? Math.max(0, source.activeObjective.baselineAverageRideExcitement)
+            : 0,
         targetGuests:
           typeof source.activeObjective.targetGuests === "number"
             ? Math.max(0, Math.round(source.activeObjective.targetGuests))
@@ -1464,6 +1499,14 @@ function normalizeObjectives(
         targetOpenRideCount:
           typeof source.activeObjective.targetOpenRideCount === "number"
             ? Math.max(0, Math.round(source.activeObjective.targetOpenRideCount))
+            : 0,
+        targetTotalRideCount:
+          typeof source.activeObjective.targetTotalRideCount === "number"
+            ? Math.max(0, Math.round(source.activeObjective.targetTotalRideCount))
+            : 0,
+        targetAverageRideExcitement:
+          typeof source.activeObjective.targetAverageRideExcitement === "number"
+            ? Math.max(0, source.activeObjective.targetAverageRideExcitement)
             : 0,
         rewardCash:
           typeof source.activeObjective.rewardCash === "number"
@@ -1525,6 +1568,132 @@ function normalizePlayerUi(
         ? Math.max(1, Math.round(source.popupCooldownDays))
         : fallback.popupCooldownDays,
   };
+}
+
+function normalizeExperience(
+  source: unknown,
+  fallback: PlayerExperienceState
+): PlayerExperienceState {
+  if (!isObjectLike(source)) {
+    return createInitialPlayerExperienceState();
+  }
+
+  const activeEvent: PlayerExperienceEvent | null = isObjectLike(source.activeEvent)
+    ? {
+        id: typeof source.activeEvent.id === "string" ? source.activeEvent.id : "legacy-experience",
+        type:
+          source.activeEvent.type === "press_day" ||
+          source.activeEvent.type === "school_trip" ||
+          source.activeEvent.type === "influencer_event" ||
+          source.activeEvent.type === "regional_fan_weekend" ||
+          source.activeEvent.type === "vip_critic"
+            ? source.activeEvent.type
+            : "press_day",
+        title:
+          typeof source.activeEvent.title === "string"
+            ? source.activeEvent.title
+            : "Park event",
+        summary:
+          typeof source.activeEvent.summary === "string"
+            ? source.activeEvent.summary
+            : "Legacy park event migrated into the latest schema.",
+        startedAtDayIndex:
+          typeof source.activeEvent.startedAtDayIndex === "number"
+            ? Math.max(0, Math.round(source.activeEvent.startedAtDayIndex))
+            : 0,
+        daysRemaining:
+          typeof source.activeEvent.daysRemaining === "number"
+            ? Math.max(0, Math.round(source.activeEvent.daysRemaining))
+            : 0,
+        guestCapBonus:
+          typeof source.activeEvent.guestCapBonus === "number"
+            ? source.activeEvent.guestCapBonus
+            : 0,
+        scoreBonus:
+          typeof source.activeEvent.scoreBonus === "number"
+            ? source.activeEvent.scoreBonus
+            : 0,
+        momentumBonus:
+          typeof source.activeEvent.momentumBonus === "number"
+            ? source.activeEvent.momentumBonus
+            : 0,
+        visualIntensity:
+          typeof source.activeEvent.visualIntensity === "number"
+            ? Math.max(0, Math.round(source.activeEvent.visualIntensity))
+            : 0,
+        guestWaveSize:
+          typeof source.activeEvent.guestWaveSize === "number"
+            ? Math.max(0, Math.round(source.activeEvent.guestWaveSize))
+            : 0,
+        reviewerName:
+          typeof source.activeEvent.reviewerName === "string" || source.activeEvent.reviewerName === null
+            ? source.activeEvent.reviewerName
+            : null,
+        reviewerGuestId:
+          typeof source.activeEvent.reviewerGuestId === "number"
+            ? Math.max(0, Math.round(source.activeEvent.reviewerGuestId))
+            : null,
+      }
+    : null;
+
+  return {
+    ...fallback,
+    ...source,
+    activeEvent,
+    lastEventSummary:
+      typeof source.lastEventSummary === "string"
+        ? source.lastEventSummary
+        : fallback.lastEventSummary,
+    lastPresentedEventId:
+      typeof source.lastPresentedEventId === "string" || source.lastPresentedEventId === null
+        ? source.lastPresentedEventId
+        : fallback.lastPresentedEventId,
+    recentEventSummaries: Array.isArray(source.recentEventSummaries)
+      ? source.recentEventSummaries
+          .filter((item): item is string => typeof item === "string")
+          .slice(0, 8)
+      : fallback.recentEventSummaries,
+    relevantGuests: Array.isArray(source.relevantGuests)
+      ? source.relevantGuests
+          .filter((guest) => isObjectLike(guest))
+          .map((guest, index) => ({
+            id: typeof guest.id === "string" ? guest.id : `legacy-relevant-guest-${index}`,
+            guestId:
+              typeof guest.guestId === "number"
+                ? Math.max(0, Math.round(guest.guestId))
+                : null,
+            name: typeof guest.name === "string" ? guest.name : "Relevant guest",
+            role: normalizeRelevantGuestRole(guest.role),
+            eventId:
+              typeof guest.eventId === "string" ? guest.eventId : "legacy-experience",
+            eventTitle:
+              typeof guest.eventTitle === "string" ? guest.eventTitle : "Park event",
+            arrivedAtDayIndex:
+              typeof guest.arrivedAtDayIndex === "number"
+                ? Math.max(0, Math.round(guest.arrivedAtDayIndex))
+                : 0,
+          }))
+          .slice(0, 20)
+      : fallback.relevantGuests,
+    completedReviews:
+      typeof source.completedReviews === "number"
+        ? Math.max(0, Math.round(source.completedReviews))
+        : fallback.completedReviews,
+    positiveReviews:
+      typeof source.positiveReviews === "number"
+        ? Math.max(0, Math.round(source.positiveReviews))
+        : fallback.positiveReviews,
+  };
+}
+
+function normalizeRelevantGuestRole(value: unknown): PlayerRelevantGuestRole {
+  return value === "critic" ||
+    value === "press" ||
+    value === "influencer" ||
+    value === "school_lead" ||
+    value === "fan_lead"
+    ? value
+    : "press";
 }
 
 function normalizeRivalry(

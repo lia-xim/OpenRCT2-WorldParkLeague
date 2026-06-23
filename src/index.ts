@@ -12,21 +12,35 @@ import {
   WINDOW_CLASSIFICATION,
 } from "./config";
 import { readPlayerSnapshot } from "./domain/player";
-import { peekStoredState, readState, syncStateToCurrentMonth } from "./state/repository";
+import {
+  markExperienceEventPresented,
+  peekStoredState,
+  readState,
+  syncStateToCurrentMonth,
+} from "./state/repository";
 import type {
   LivePulseResult,
   MonthlySimulationResult,
+  PlayerExperienceEvent,
+  PlayerRelevantGuest,
   PlayerSnapshot,
   WorldParkLeagueState,
 } from "./types";
 import { closeCapitalDeskWindowIfOpen, refreshCapitalDeskWindow } from "./ui/capitalDesk";
+import { closeCheatWindowIfOpen, openCheatWindow } from "./ui/cheatWindow";
+import { closeObjectiveWindowIfOpen, refreshObjectiveWindow } from "./ui/objectiveWindow";
 import { closePrestigeWindowIfOpen, refreshPrestigeWindow } from "./ui/prestigeWindow";
+import {
+  closeRelevantGuestsWindowIfOpen,
+  refreshRelevantGuestsWindow,
+} from "./ui/relevantGuestsWindow";
 import { closeWatchlistWindowIfOpen, refreshWatchlistWindow } from "./ui/watchlistWindow";
 import { closeMainWindowIfOpen, openMainWindow, refreshMainWindow } from "./ui/window";
 
 let lastAnnouncedMonth = Number.MIN_SAFE_INTEGER;
 let lastAnnouncedPulseDayIndex = Number.MIN_SAFE_INTEGER;
 let lastSpotlightBurstTick = Number.MIN_SAFE_INTEGER;
+let lastClosedParkExperienceNoticeEventId: string | null = null;
 let runtimeHooksRegistered = false;
 
 function announceSimulationResults(
@@ -135,11 +149,14 @@ function applyDailyLeagueTick(): void {
 
   announceSimulationResults(synced.state, synced.results);
   announcePulseResults(synced.state, synced.pulseResults);
+  presentActiveExperienceEvent(synced.state, snapshot);
   if (synced.results.length > 0 || synced.pulseResults.length > 0) {
     refreshMainWindow();
     refreshCapitalDeskWindow();
+    refreshObjectiveWindow();
     refreshPrestigeWindow();
     refreshWatchlistWindow();
+    refreshRelevantGuestsWindow();
   }
 }
 
@@ -193,6 +210,10 @@ function applySpotlightGuestBurst(): void {
     return;
   }
 
+  if (!isParkOpenForLeagueGuests()) {
+    return;
+  }
+
   const storedState = peekStoredState();
   if (!storedState || !hasAnyPlayerBoost(storedState)) {
     return;
@@ -225,6 +246,238 @@ function applySpotlightGuestBurst(): void {
   lastSpotlightBurstTick = date.ticksElapsed;
   for (let index = 0; index < Math.min(gap, burst.guestsPerBurst); index += 1) {
     park.generateGuest();
+  }
+}
+
+function presentActiveExperienceEvent(
+  state: WorldParkLeagueState,
+  snapshot: PlayerSnapshot
+): void {
+  const event = state.player.experience.activeEvent;
+  if (!event || state.player.experience.lastPresentedEventId === event.id) {
+    return;
+  }
+
+  if (!isParkOpenForLeagueGuests()) {
+    if (lastClosedParkExperienceNoticeEventId !== event.id) {
+      lastClosedParkExperienceNoticeEventId = event.id;
+      park.postMessage(
+        "[World Park League] Event guests are waiting because the park is currently closed."
+      );
+    }
+    return;
+  }
+
+  const relevantGuests = spawnExperienceGuestWave(event);
+  spawnExperienceVisuals(event);
+  lastClosedParkExperienceNoticeEventId = null;
+  markExperienceEventPresented(event.id, relevantGuests, snapshot);
+}
+
+function spawnExperienceGuestWave(event: PlayerExperienceEvent): PlayerRelevantGuest[] {
+  const relevantGuests: PlayerRelevantGuest[] = [];
+  const guestsToSpawn = Math.max(1, Math.min(event.guestWaveSize, 28));
+
+  for (let index = 0; index < guestsToSpawn; index += 1) {
+    try {
+      const guest = park.generateGuest();
+      decorateExperienceGuest(guest, event, index);
+      const relevantGuest = buildRelevantGuestRecord(guest, event, index);
+      if (relevantGuest) {
+        relevantGuests.push(relevantGuest);
+      }
+    } catch (error) {
+      logPluginError("experience.generateGuest", error);
+      break;
+    }
+  }
+
+  return relevantGuests;
+}
+
+function decorateExperienceGuest(
+  guest: Guest,
+  event: PlayerExperienceEvent,
+  index: number
+): void {
+  try {
+    guest.happiness = Math.max(guest.happiness, 210);
+    guest.happinessTarget = Math.max(guest.happinessTarget, 210);
+
+    if (event.type === "vip_critic" && index === 0) {
+      guest.name = event.reviewerName ?? "Park Critic";
+      guest.tshirtColour = 2;
+      guest.trousersColour = 0;
+      guest.giveItem({ type: "map" });
+      if (guest.availableAnimations.includes("takePhoto")) {
+        guest.animation = "takePhoto";
+      }
+      return;
+    }
+
+    if (index > 5) {
+      return;
+    }
+
+    if (event.type === "school_trip") {
+      guest.name = `School Trip Guest ${index + 1}`;
+      guest.tshirtColour = 12;
+      guest.giveItem({ type: "map" });
+      return;
+    }
+
+    if (event.type === "influencer_event") {
+      guest.name = `Creator Guest ${index + 1}`;
+      guest.tshirtColour = 6;
+      guest.giveItem({ type: "sunglasses" });
+      if (guest.availableAnimations.includes("takePhoto")) {
+        guest.animation = "takePhoto";
+      }
+      return;
+    }
+
+    if (event.type === "press_day") {
+      guest.name = `Press Guest ${index + 1}`;
+      guest.tshirtColour = 1;
+      guest.giveItem({ type: "map" });
+      return;
+    }
+
+    guest.name = `Fan Weekend Guest ${index + 1}`;
+    guest.tshirtColour = 10;
+    guest.giveItem({ type: "balloon" });
+  } catch (error) {
+    logPluginError("experience.decorateGuest", error);
+  }
+}
+
+function buildRelevantGuestRecord(
+  guest: Guest,
+  event: PlayerExperienceEvent,
+  index: number
+): PlayerRelevantGuest | null {
+  const guestId = typeof guest.id === "number" ? guest.id : null;
+  if (event.type === "vip_critic") {
+    return index === 0
+      ? {
+          id: `${event.id}:critic`,
+          guestId,
+          name: event.reviewerName ?? guest.name,
+          role: "critic",
+          eventId: event.id,
+          eventTitle: event.title,
+          arrivedAtDayIndex: event.startedAtDayIndex,
+        }
+      : null;
+  }
+
+  if (event.type === "press_day" && index < 3) {
+    return {
+      id: `${event.id}:press:${index}`,
+      guestId,
+      name: guest.name,
+      role: "press",
+      eventId: event.id,
+      eventTitle: event.title,
+      arrivedAtDayIndex: event.startedAtDayIndex,
+    };
+  }
+
+  if (event.type === "influencer_event" && index < 3) {
+    return {
+      id: `${event.id}:creator:${index}`,
+      guestId,
+      name: guest.name,
+      role: "influencer",
+      eventId: event.id,
+      eventTitle: event.title,
+      arrivedAtDayIndex: event.startedAtDayIndex,
+    };
+  }
+
+  if (event.type === "school_trip" && index < 2) {
+    return {
+      id: `${event.id}:school:${index}`,
+      guestId,
+      name: index === 0 ? "School Trip Lead" : guest.name,
+      role: "school_lead",
+      eventId: event.id,
+      eventTitle: event.title,
+      arrivedAtDayIndex: event.startedAtDayIndex,
+    };
+  }
+
+  if (event.type === "regional_fan_weekend" && index < 2) {
+    return {
+      id: `${event.id}:fan:${index}`,
+      guestId,
+      name: index === 0 ? "Fan Weekend Captain" : guest.name,
+      role: "fan_lead",
+      eventId: event.id,
+      eventTitle: event.title,
+      arrivedAtDayIndex: event.startedAtDayIndex,
+    };
+  }
+
+  return null;
+}
+
+function spawnExperienceVisuals(event: PlayerExperienceEvent): void {
+  const anchors = map.getAllEntities("guest").filter((guest) => guest.isInPark);
+  const effectCount = Math.max(2, Math.min(event.visualIntensity, 12));
+  for (let index = 0; index < effectCount; index += 1) {
+    const anchor = anchors[(date.ticksElapsed + index * 7) % Math.max(1, anchors.length)];
+    if (!anchor) {
+      continue;
+    }
+
+    tryCreateEntity("balloon", {
+      x: anchor.x + ((index % 3) - 1) * 10,
+      y: anchor.y + (((index + 1) % 3) - 1) * 10,
+      z: anchor.z + 28 + (index % 4) * 4,
+      colour: getExperienceColour(event, index),
+    });
+
+    if (index % 3 === 0) {
+      tryCreateEntity("money_effect", {
+        x: anchor.x,
+        y: anchor.y,
+        z: anchor.z + 32,
+        value: 0,
+      });
+    }
+
+    if (event.visualIntensity >= 8) {
+      tryCreateEntity("explosion_flare", {
+        x: anchor.x,
+        y: anchor.y,
+        z: anchor.z + 48,
+      });
+    }
+  }
+}
+
+function tryCreateEntity(type: EntityType, initializer: object): void {
+  try {
+    map.createEntity(type, initializer);
+  } catch (error) {
+    logPluginError(`experience.createEntity.${type}`, error);
+  }
+}
+
+function getExperienceColour(event: PlayerExperienceEvent, index: number): number {
+  switch (event.type) {
+    case "school_trip":
+      return [12, 13, 14][index % 3] ?? 12;
+    case "influencer_event":
+      return [6, 8, 9][index % 3] ?? 6;
+    case "regional_fan_weekend":
+      return [10, 11, 15][index % 3] ?? 10;
+    case "vip_critic":
+      return [0, 1, 2][index % 3] ?? 1;
+    case "press_day":
+    default:
+      return [1, 2, 3][index % 3] ?? 2;
   }
 }
 
@@ -272,11 +525,39 @@ function registerUi(): void {
     try {
       registerHooks();
       openMainWindow();
+      const snapshot = tryReadSnapshot("menu.experience.snapshot");
+      if (snapshot) {
+        presentActiveExperienceEvent(readState(snapshot), snapshot);
+      }
     } catch (error) {
       logPluginError("menu.open", error);
       ui.showError(PLUGIN_NAME, "The league window could not be opened safely. Please reload the park.");
     }
   });
+
+  ui.registerMenuItem(`${PLUGIN_NAME} Cheats`, () => {
+    if (context.mode !== "normal") {
+      ui.showError(PLUGIN_NAME, "Open a park first to use cheats.");
+      return;
+    }
+
+    try {
+      registerHooks();
+      openCheatWindow();
+    } catch (error) {
+      logPluginError("menu.cheats", error);
+      ui.showError(PLUGIN_NAME, "The cheat window could not be opened safely.");
+    }
+  });
+}
+
+function isParkOpenForLeagueGuests(): boolean {
+  try {
+    return park.getFlag("open");
+  } catch (error) {
+    logPluginError("park.open", error);
+    return false;
+  }
 }
 
 function main(): void {
@@ -284,7 +565,10 @@ function main(): void {
     closeMainWindowIfOpen();
   }
   closeCapitalDeskWindowIfOpen();
+  closeCheatWindowIfOpen();
+  closeObjectiveWindowIfOpen();
   closePrestigeWindowIfOpen();
+  closeRelevantGuestsWindowIfOpen();
   closeWatchlistWindowIfOpen();
 
   registerUi();

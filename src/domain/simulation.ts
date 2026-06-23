@@ -14,6 +14,13 @@ import {
   WORLD_DEMAND_BASE,
 } from "../config";
 import { advancePlayerEquityMarket, createInitialEquityState } from "./equity";
+import {
+  advanceExperienceForDays,
+  createInitialPlayerExperienceState,
+  getExperienceEffects,
+  maybeStartExperienceEventForBoost,
+  maybeStartStandaloneExperienceEvent,
+} from "./experience";
 import { formatCompactMoney } from "./currency";
 import { getDifficultyProfile } from "./difficulty";
 import { advancePlayerGovernance, createInitialGovernanceState } from "./governance";
@@ -177,6 +184,7 @@ export function createInitialStateAtDay(
       rivalry: createInitialRivalChallengeState(),
       objectives: createInitialObjectiveState(),
       ui: createInitialPlayerUiState(),
+      experience: createInitialPlayerExperienceState(),
       prestige: createInitialPrestigeState(),
     },
   };
@@ -275,11 +283,32 @@ export function simulateMonth(
   const playerScore = calculatePlayerScore(playerSnapshot);
   const playerActionEffects = getPlayerActionEffects(nextState);
   const prestigeRewardEffects = getPrestigeRewardEffects(nextState);
+  const experienceResolution = advanceExperienceForDays(
+    nextState,
+    playerSnapshot,
+    month * DAYS_PER_MONTH,
+    DAYS_PER_MONTH
+  );
+  parkRewardCashDelta += experienceResolution.cashDelta;
+  playerNotifications.push(...experienceResolution.notifications);
+  headlines.push(...experienceResolution.headlines);
+  const experienceEffects = getExperienceEffects(nextState);
   const effectivePlayerScore = applyPlayerLeaguePressure(
     nextState,
-    playerScore + playerActionEffects.scoreBonus + prestigeRewardEffects.scoreBonus
+    playerScore +
+      playerActionEffects.scoreBonus +
+      prestigeRewardEffects.scoreBonus +
+      experienceEffects.scoreBonus
   );
-  nextState.player.liveMomentum = calculatePlayerLiveMomentum(nextState, playerSnapshot, playerScore);
+  nextState.player.liveMomentum = roundTo(
+    clamp(
+      calculatePlayerLiveMomentum(nextState, playerSnapshot, playerScore) +
+        experienceEffects.momentumBonus,
+      -14,
+      14
+    ),
+    2
+  );
   const leaderboard = buildLeaderboard(
     nextState,
     playerSnapshot,
@@ -302,8 +331,23 @@ export function simulateMonth(
   const spotlightNews = syncSpotlightState(nextState, month);
   if (spotlightNews) {
     headlines.push(spotlightNews);
+    if (spotlightNews.parkId === PLAYER_PARK_ID) {
+      playerNotifications.push(
+        ...maybeStartExperienceEventForBoost(nextState, "spotlight", month * DAYS_PER_MONTH)
+      );
+    }
   }
-  headlines.push(...syncSupportingBoostStates(nextState, month * DAYS_PER_MONTH, month));
+  const supportingNews = syncSupportingBoostStates(nextState, month * DAYS_PER_MONTH, month);
+  headlines.push(...supportingNews);
+  if (supportingNews.some((item) => item.parkId === PLAYER_PARK_ID && item.headline.includes("Featured"))) {
+    playerNotifications.push(
+      ...maybeStartExperienceEventForBoost(nextState, "featured", month * DAYS_PER_MONTH)
+    );
+  } else if (supportingNews.some((item) => item.parkId === PLAYER_PARK_ID && item.headline.includes("Breakout"))) {
+    playerNotifications.push(
+      ...maybeStartExperienceEventForBoost(nextState, "breakout", month * DAYS_PER_MONTH)
+    );
+  }
   playerNotifications.push(
     ...updateWatchlistForCycle(
       state,
@@ -368,7 +412,10 @@ export function simulateMonth(
       ) *
         getPlayerSpotlightGuestMultiplier(nextState) *
         nextState.player.governance.guestCapImpact *
-        (1 + playerActionEffects.guestCapBonus + prestigeRewardEffects.guestCapBonus),
+        (1 +
+          playerActionEffects.guestCapBonus +
+          prestigeRewardEffects.guestCapBonus +
+          experienceEffects.guestCapBonus),
       0.75,
       15
     ),
@@ -493,11 +540,32 @@ export function simulateLivePulse(
   const playerScore = calculatePlayerScore(playerSnapshot);
   const playerActionEffects = getPlayerActionEffects(nextState);
   const prestigeRewardEffects = getPrestigeRewardEffects(nextState);
+  const experienceResolution = advanceExperienceForDays(
+    nextState,
+    playerSnapshot,
+    dayIndex,
+    Math.max(1, nextState.config.livePulseIntervalDays)
+  );
+  parkRewardCashDelta += experienceResolution.cashDelta;
+  playerNotifications.push(...experienceResolution.notifications);
+  headlines.push(...experienceResolution.headlines);
+  const experienceEffects = getExperienceEffects(nextState);
   const effectivePlayerScore = applyPlayerLeaguePressure(
     nextState,
-    playerScore + playerActionEffects.scoreBonus + prestigeRewardEffects.scoreBonus
+    playerScore +
+      playerActionEffects.scoreBonus +
+      prestigeRewardEffects.scoreBonus +
+      experienceEffects.scoreBonus
   );
-  nextState.player.liveMomentum = calculatePlayerLiveMomentum(nextState, playerSnapshot, playerScore);
+  nextState.player.liveMomentum = roundTo(
+    clamp(
+      calculatePlayerLiveMomentum(nextState, playerSnapshot, playerScore) +
+        experienceEffects.momentumBonus,
+      -14,
+      14
+    ),
+    2
+  );
   const leaderboard = buildLeaderboard(
     nextState,
     playerSnapshot,
@@ -518,11 +586,32 @@ export function simulateLivePulse(
   const spotlightNews = syncSpotlightState(nextState, Math.floor(dayIndex / DAYS_PER_MONTH));
   if (spotlightNews) {
     headlines.push(spotlightNews);
+    if (spotlightNews.parkId === PLAYER_PARK_ID) {
+      playerNotifications.push(
+        ...maybeStartExperienceEventForBoost(nextState, "spotlight", dayIndex)
+      );
+    }
   }
   if (allowLiveEvents) {
-    headlines.push(
-      ...syncSupportingBoostStates(nextState, dayIndex, Math.floor(dayIndex / DAYS_PER_MONTH))
+    const supportingNews = syncSupportingBoostStates(
+      nextState,
+      dayIndex,
+      Math.floor(dayIndex / DAYS_PER_MONTH)
     );
+    headlines.push(...supportingNews);
+    if (supportingNews.some((item) => item.parkId === PLAYER_PARK_ID && item.headline.includes("Featured"))) {
+      playerNotifications.push(
+        ...maybeStartExperienceEventForBoost(nextState, "featured", dayIndex)
+      );
+    } else if (supportingNews.some((item) => item.parkId === PLAYER_PARK_ID && item.headline.includes("Breakout"))) {
+      playerNotifications.push(
+        ...maybeStartExperienceEventForBoost(nextState, "breakout", dayIndex)
+      );
+    } else {
+      playerNotifications.push(
+        ...maybeStartStandaloneExperienceEvent(nextState, playerSnapshot, dayIndex)
+      );
+    }
   }
   playerNotifications.push(
     ...updateWatchlistForCycle(
@@ -564,7 +653,10 @@ export function simulateLivePulse(
       ) *
         getPlayerSpotlightGuestMultiplier(nextState) *
         nextState.player.governance.guestCapImpact *
-        (1 + playerActionEffects.guestCapBonus + prestigeRewardEffects.guestCapBonus),
+        (1 +
+          playerActionEffects.guestCapBonus +
+          prestigeRewardEffects.guestCapBonus +
+          experienceEffects.guestCapBonus),
       0.75,
       15
     ),

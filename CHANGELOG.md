@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.25.0
+
+- Added the first `Park Experience` layer so major league moments can become visible in the park, not only in the UI.
+- Added player park events: `Press Day`, `School Trip`, `Influencer Event`, `Regional Fan Weekend`, and `VIP Critic Visit`.
+- Added real guest waves for experience events, including themed guest names, guest items, and named VIP critic guests.
+- Added a manual `People` window that lets players locate critics, press, creators, school leads, and fan-weekend captains without interrupting play.
+- Added one-shot visual celebration triggers using OpenRCT2 entities such as balloons, money effects, and flare effects.
+- Added VIP critic review resolution based on real park rating, ride satisfaction, average excitement, park depth, and operating profit.
+- Added positive review rewards and negative review penalties that affect park cash and governance confidence.
+- Added active park-event visibility in the main UI timeline and selected-park details.
+- Added a dedicated `Tasks` window for active assignments, including progress, target, deadline, reward, risk, and clear automatic-check wording.
+- Added a `Cheats` window and direct `World Park League Cheats` menu entry for cash, guests, park open/close attempts, visual bursts, forced league boosts, and manual league-month advancement.
+- Hardened league-driven guest spawning so event and boost guests wait while the park is closed.
+- Added `docs/outstanding-experience-card.md` as the long-running plan for deeper park-visible moments, seasonal expos, safer rival sabotage, and event balancing.
+- Updated schema to `27`.
+
+## 0.24.0
+
+- Simplified player-facing window naming and reduced key management screens around `Money`, `Rivals`, `Goals`, and `Help`.
+- Added an in-game Help window that explains rank, score, people share, park cash, active goals, rival challenges, and counterplay.
+- Added new player-triggered countermeasures: `Counter Campaign`, `Local Push`, and `Build Focus`.
+- Added construction-focused objectives for coaster quality and capacity expansion, with save migration defaults for older active goals.
+- Added save-aware difficulty recommendations so the UI can explain whether Casual, Normal, Hard, or Tycoon fits the current park.
+- Updated schema to `26`.
+
 ## 0.23.0
 
 - Added a first-run quick-start window so new players immediately understand rank, goals, difficulty, money, rivals, and popups.

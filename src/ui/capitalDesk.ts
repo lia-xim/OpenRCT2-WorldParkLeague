@@ -35,7 +35,7 @@ import type {
 } from "../types";
 
 const CAPITAL_DESK_CLASSIFICATION = "world-park-league.capital-desk";
-const CAPITAL_DESK_TITLE = `${PLUGIN_NAME} | Capital Desk`;
+const CAPITAL_DESK_TITLE = `${PLUGIN_NAME} | Money`;
 const WINDOW_WIDTH = 540;
 const WINDOW_HEIGHT = 742;
 
@@ -79,7 +79,7 @@ export function openCapitalDeskWindow(): void {
       actionRowTypes = [];
     },
     widgets: [
-      { type: "groupbox", x: 8, y: 18, width: 524, height: 150, text: "Capital & Portfolio Overview" },
+      { type: "groupbox", x: 8, y: 18, width: 524, height: 150, text: "Money Snapshot" },
       {
         type: "custom",
         name: "equity-card",
@@ -93,7 +93,7 @@ export function openCapitalDeskWindow(): void {
       },
       { type: "label", name: "owner-boundary", x: 18, y: 136, width: 504, height: 24, text: "" },
 
-      { type: "groupbox", x: 8, y: 174, width: 524, height: 176, text: "Open Capital Offers" },
+      { type: "groupbox", x: 8, y: 174, width: 524, height: 176, text: "Investor Offers" },
       {
         type: "listview",
         name: "offer-list",
@@ -174,7 +174,7 @@ export function openCapitalDeskWindow(): void {
       { type: "label", name: "offer-hint", x: 18, y: 306, width: 504, height: 14, text: "" },
       { type: "label", name: "offer-footer", x: 18, y: 324, width: 504, height: 18, text: "" },
 
-      { type: "groupbox", x: 8, y: 356, width: 524, height: 170, text: "Board Votes" },
+      { type: "groupbox", x: 8, y: 356, width: 524, height: 170, text: "Board Decisions" },
       {
         type: "listview",
         name: "proposal-list",
@@ -230,7 +230,7 @@ export function openCapitalDeskWindow(): void {
       { type: "label", name: "proposal-hint", x: 18, y: 490, width: 504, height: 20, text: "" },
       { type: "label", name: "proposal-footer", x: 18, y: 510, width: 504, height: 12, text: "" },
 
-      { type: "groupbox", x: 8, y: 532, width: 524, height: 198, text: "League Actions" },
+      { type: "groupbox", x: 8, y: 532, width: 524, height: 198, text: "Actions" },
       {
         type: "listview",
         name: "action-list",
@@ -261,50 +261,52 @@ export function openCapitalDeskWindow(): void {
       },
       {
         type: "button",
-        name: "action-pr",
+        name: "action-launch",
         x: 18,
         y: 654,
-        width: 110,
+        width: 132,
         height: 16,
-        text: "PR Blitz",
+        text: "Launch selected",
         onClick: () => {
-          handleLeagueAction("pr_blitz");
+          if (selectedActionType) {
+            handleLeagueAction(selectedActionType);
+          }
         },
       },
       {
         type: "button",
-        name: "action-festival",
-        x: 136,
+        name: "action-counter",
+        x: 158,
         y: 654,
         width: 110,
         height: 16,
-        text: "Guest Fest",
+        text: "Counter rival",
         onClick: () => {
-          handleLeagueAction("guest_festival");
+          handleLeagueAction("rival_counter_pr");
         },
       },
       {
         type: "button",
-        name: "action-safety",
-        x: 254,
+        name: "action-local",
+        x: 276,
         y: 654,
         width: 110,
         height: 16,
-        text: "Safety Camp",
+        text: "Local push",
         onClick: () => {
-          handleLeagueAction("safety_campaign");
+          handleLeagueAction("local_discount_push");
         },
       },
       {
         type: "button",
-        name: "action-efficiency",
-        x: 372,
+        name: "action-build",
+        x: 394,
         y: 654,
-        width: 110,
+        width: 88,
         height: 16,
-        text: "Efficiency",
+        text: "Build focus",
         onClick: () => {
-          handleLeagueAction("efficiency_push");
+          handleLeagueAction("build_focus");
         },
       },
       { type: "label", name: "action-hint", x: 18, y: 678, width: 504, height: 22, text: "" },
@@ -375,20 +377,12 @@ function updateCapitalDeskContents(state: WorldParkLeagueState, snapshot: Player
         right: { label: "League worth", value: formatCompactMoney(ownerNetWorth) },
       },
       {
-        left: { label: "Park value", value: formatCompactMoney(snapshot.parkValue) },
-        right: { label: "Loan", value: formatCompactMoney(snapshot.bankLoan) },
-      },
-      {
-        left: { label: "Equity value", value: formatCompactMoney(calculatePlayerEquityValue(snapshot)) },
+        left: { label: "Park value", value: formatCompactMoney(calculatePlayerEquityValue(snapshot)) },
         right: { label: "Cash raised", value: formatCompactMoney(state.player.equity.totalCashRaised) },
       },
       {
         left: { label: "Open offers", value: state.player.equity.activeOffers.length.toString() },
-        right: { label: "Pending votes", value: state.player.governance.pendingProposals.length.toString() },
-      },
-      {
-        left: { label: "Active programs", value: state.player.governance.activePrograms.length.toString() },
-        right: { label: "League flow", value: trimText(state.player.owner.lastCashFlowSummary ?? "No recent flow.", 20) },
+        right: { label: "Votes", value: state.player.governance.pendingProposals.length.toString() },
       },
     ],
   };
@@ -451,6 +445,7 @@ function updateCapitalDeskContents(state: WorldParkLeagueState, snapshot: Player
   setButtonDisabled(window, "buyback-10", state.player.equity.outsideOwnedShare < 0.1);
   setButtonDisabled(window, "approve-proposal", !selectedProposal);
   setButtonDisabled(window, "decline-proposal", !selectedProposal);
+  setButtonDisabled(window, "action-launch", !selectedActionDefinition);
   const buybackFive = state.player.equity.outsideOwnedShare >= 0.05
     ? estimateBuybackPrice(state, snapshot, 0.05)
     : 0;
@@ -470,7 +465,7 @@ function updateCapitalDeskContents(state: WorldParkLeagueState, snapshot: Player
     state.player.equity.lastAcceptedOfferSummary ??
       state.player.equity.lastBuybackSummary ??
       state.player.equity.lastDeclinedOfferSummary ??
-      "Capital offers affect the park treasury. Rival investments now also use park cash."
+      "Offers affect real park cash. Use buybacks when you want more control again."
   );
   setLabel(
     window,
@@ -496,8 +491,8 @@ function updateCapitalDeskContents(state: WorldParkLeagueState, snapshot: Player
     window,
     "action-footer",
     selectedActionDefinition
-      ? `Effect: score +${selectedActionDefinition.scoreBonus.toFixed(1)}, people +${(selectedActionDefinition.guestCapBonus * 100).toFixed(1)}%, live form +${selectedActionDefinition.momentumBonus.toFixed(1)}. ${getPlayerActionSummary(state)}`
-      : `${getPlayerActionSummary(state)} | These are player-triggered plays, not random world events.`
+      ? `Effect: score +${selectedActionDefinition.scoreBonus.toFixed(1)}, people +${(selectedActionDefinition.guestCapBonus * 100).toFixed(1)}%, form +${selectedActionDefinition.momentumBonus.toFixed(1)}. ${getPlayerActionSummary(state)}`
+      : `${getPlayerActionSummary(state)} | Select an action, then launch it.`
   );
 }
 
@@ -567,9 +562,7 @@ function handleBuybackAction(share: number): void {
   updateCapitalDeskContents(result.state, readPlayerSnapshot());
 }
 
-function handleLeagueAction(
-  actionType: "pr_blitz" | "guest_festival" | "safety_campaign" | "efficiency_push"
-): void {
+function handleLeagueAction(actionType: PlayerLeagueActionType): void {
   if (typeof ui === "undefined") {
     return;
   }

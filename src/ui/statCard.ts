@@ -26,6 +26,7 @@ const ROW_HEIGHT = 16;
 const VALUE_GAP = 6;
 const CAPTION_GAP = 18;
 const TEXT_PANEL_ROW_HEIGHT = 14;
+const TEXT_PANEL_MIN_ROW_HEIGHT = 10;
 
 export function drawStatCard(
   widget: CustomWidget,
@@ -94,7 +95,8 @@ export function drawTextPanel(
     startY += CAPTION_GAP;
   }
 
-  if (model.rows.length === 0) {
+  const rows = model.rows.filter((row) => row.trim().length > 0);
+  if (rows.length === 0) {
     graphics.text(
       `{BLACK}${trimTextToWidth(graphics, model.emptyText ?? "No data available.", innerWidth - INNER_PADDING * 2)}`,
       OUTER_PADDING + INNER_PADDING,
@@ -104,13 +106,23 @@ export function drawTextPanel(
   }
 
   const availableHeight = Math.max(0, widget.height - OUTER_PADDING - startY);
-  const rowHeight =
-    model.rows.length > 0
-      ? Math.max(10, Math.min(TEXT_PANEL_ROW_HEIGHT, Math.floor(availableHeight / model.rows.length)))
-      : TEXT_PANEL_ROW_HEIGHT;
+  const maxRows = Math.max(1, Math.floor(availableHeight / TEXT_PANEL_MIN_ROW_HEIGHT));
+  const hasOverflow = rows.length > maxRows;
+  const visibleRows = hasOverflow
+    ? [
+        ...rows.slice(0, Math.max(0, maxRows - 1)),
+        `... ${rows.length - Math.max(0, maxRows - 1)} more`,
+      ]
+    : rows;
+  const rowHeight = hasOverflow
+    ? TEXT_PANEL_MIN_ROW_HEIGHT
+    : Math.max(
+        TEXT_PANEL_MIN_ROW_HEIGHT,
+        Math.min(TEXT_PANEL_ROW_HEIGHT, Math.floor(availableHeight / visibleRows.length))
+      );
 
-  for (let index = 0; index < model.rows.length; index += 1) {
-    const row = model.rows[index];
+  for (let index = 0; index < visibleRows.length; index += 1) {
+    const row = visibleRows[index];
     if (!row) {
       continue;
     }

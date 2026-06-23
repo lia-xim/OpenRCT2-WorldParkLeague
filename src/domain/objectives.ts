@@ -122,14 +122,47 @@ export function advancePlayerObjective(
   return result;
 }
 
-export function getActiveObjectiveSummary(state: WorldParkLeagueState): string {
+export function getActiveObjectiveSummary(
+  state: WorldParkLeagueState,
+  currentDayIndex: number = state.lastLivePulseDayIndex
+): string {
   const objective = state.player.objectives.activeObjective;
   if (!objective) {
     return state.player.objectives.lastObjectiveSummary ?? "No active objective.";
   }
 
-  const remaining = Math.max(0, objective.resolveAtDayIndex - state.lastLivePulseDayIndex);
+  const remaining = Math.max(0, objective.resolveAtDayIndex - currentDayIndex);
   return `${objective.title} | ${remaining}d | ${describeObjectiveTarget(objective)} | reward ${formatMoney(objective.rewardCash)} | risk ${formatMoney(objective.penaltyCash)}`;
+}
+
+export function buildActiveObjectiveDetailRows(
+  state: WorldParkLeagueState,
+  snapshot: PlayerSnapshot
+): string[] {
+  const objective = state.player.objectives.activeObjective;
+  if (!objective) {
+    const cooldown = state.player.objectives.cooldownDaysRemaining;
+    return [
+      `Status: ${state.player.objectives.lastObjectiveSummary ?? "No active task right now."}`,
+      cooldown > 0
+        ? `Next task window: cooldown ${cooldown} day${cooldown === 1 ? "" : "s"} remaining.`
+        : "Next task window: a new task can appear on a weekly league tick.",
+      `Record: ${state.player.objectives.completedObjectives} completed | ${state.player.objectives.failedObjectives} failed.`,
+      "League tasks are checked automatically while you build in the park.",
+    ];
+  }
+
+  const remaining = Math.max(0, objective.resolveAtDayIndex - snapshot.currentDayIndex);
+  return [
+    `Active task: ${objective.title}`,
+    objective.summary,
+    `Progress: ${describeObjectiveProgress(objective, snapshot)}`,
+    `Target: ${describeObjectiveTarget(objective)}`,
+    `Deadline: ${remaining} day${remaining === 1 ? "" : "s"} remaining`,
+    `Reward: ${formatMoney(objective.rewardCash)} | Risk: ${formatMoney(objective.penaltyCash)}`,
+    `Do this: ${getObjectiveActionHint(objective.type)}`,
+    "No claim button: keep building; the league checks the result automatically.",
+  ];
 }
 
 export function buildObjectiveTimelineRows(
@@ -140,10 +173,10 @@ export function buildObjectiveTimelineRows(
   const objective = state.player.objectives.activeObjective;
   if (objective) {
     const remaining = Math.max(0, objective.resolveAtDayIndex - snapshot.currentDayIndex);
-    rows.push(`Goal: ${objective.title} (${remaining}d)`);
+    rows.push(`Task: ${objective.title} (${remaining}d)`);
     rows.push(`${describeObjectiveProgress(objective, snapshot)}`);
   } else {
-    rows.push(`Goal: ${state.player.objectives.lastObjectiveSummary ?? "No active goal"}`);
+    rows.push(`Task: ${state.player.objectives.lastObjectiveSummary ?? "No active task"}`);
   }
 
   const challenge = state.player.rivalry.activeChallenge;
@@ -181,7 +214,7 @@ function createObjective(
   );
   const rewardCash = Math.round(baseCash * profile.objectiveRewardScale);
   const penaltyCash = Math.round(baseCash * profile.objectivePenaltyScale);
-  const duration = type === "ride_expansion" ? 28 : 21;
+  const duration = type === "ride_expansion" || type === "coaster_brief" || type === "capacity_push" ? 28 : 21;
 
   return {
     id: `${type}:${dayIndex}`,
@@ -194,10 +227,14 @@ function createObjective(
     baselineRating: snapshot.parkRating,
     baselineProfit: snapshot.lastMonthOperatingProfit,
     baselineOpenRideCount: snapshot.openRideCount,
+    baselineTotalRideCount: snapshot.totalRideCount,
+    baselineAverageRideExcitement: snapshot.averageRideExcitement,
     targetGuests: calculateGuestTarget(snapshot, type),
     targetRating: calculateRatingTarget(snapshot, type),
     targetProfit: calculateProfitTarget(snapshot, type),
     targetOpenRideCount: calculateRideTarget(snapshot, type),
+    targetTotalRideCount: calculateTotalRideTarget(snapshot, type),
+    targetAverageRideExcitement: calculateExcitementTarget(snapshot, type),
     rewardCash,
     penaltyCash,
   };
@@ -213,8 +250,17 @@ function chooseObjectiveType(
   if (snapshot.lastMonthOperatingProfit < 8_000) {
     return "profit_push";
   }
+  if (snapshot.totalRideCount >= 5 && snapshot.averageRideExcitement < 6.2 && rng.chance(0.36)) {
+    return "coaster_brief";
+  }
+  if (snapshot.guests >= 950 && snapshot.totalRideCount < Math.max(10, Math.ceil(snapshot.guests / 190)) && rng.chance(0.42)) {
+    return "capacity_push";
+  }
   if (snapshot.openRideCount < 8 || rng.chance(0.28)) {
     return "ride_expansion";
+  }
+  if (rng.chance(0.22)) {
+    return "coaster_brief";
   }
   return rng.chance(0.55) ? "guest_growth" : "profit_push";
 }
@@ -229,6 +275,16 @@ function evaluateObjective(objective: PlayerObjective, snapshot: PlayerSnapshot)
       return snapshot.lastMonthOperatingProfit >= objective.targetProfit;
     case "ride_expansion":
       return snapshot.openRideCount >= objective.targetOpenRideCount;
+    case "coaster_brief":
+      return (
+        snapshot.openRideCount >= objective.targetOpenRideCount &&
+        snapshot.averageRideExcitement >= objective.targetAverageRideExcitement
+      );
+    case "capacity_push":
+      return (
+        snapshot.totalRideCount >= objective.targetTotalRideCount &&
+        snapshot.guests >= objective.targetGuests
+      );
   }
 }
 
@@ -242,6 +298,10 @@ function describeObjectiveTarget(objective: PlayerObjective): string {
       return `${formatMoney(objective.targetProfit)} profit`;
     case "ride_expansion":
       return `${objective.targetOpenRideCount} open rides`;
+    case "coaster_brief":
+      return `${objective.targetOpenRideCount} open rides, ${objective.targetAverageRideExcitement.toFixed(1)} avg excitement`;
+    case "capacity_push":
+      return `${objective.targetTotalRideCount} rides and ${objective.targetGuests} guests`;
   }
 }
 
@@ -255,13 +315,22 @@ function describeObjectiveProgress(objective: PlayerObjective, snapshot: PlayerS
       return `${formatMoney(snapshot.lastMonthOperatingProfit)}/${formatMoney(objective.targetProfit)} profit`;
     case "ride_expansion":
       return `${snapshot.openRideCount}/${objective.targetOpenRideCount} open rides`;
+    case "coaster_brief":
+      return `${snapshot.openRideCount}/${objective.targetOpenRideCount} open rides | ${snapshot.averageRideExcitement.toFixed(1)}/${objective.targetAverageRideExcitement.toFixed(1)} avg excitement`;
+    case "capacity_push":
+      return `${snapshot.totalRideCount}/${objective.targetTotalRideCount} rides | ${snapshot.guests}/${objective.targetGuests} guests`;
   }
 }
 
 function calculateGuestTarget(snapshot: PlayerSnapshot, type: PlayerObjectiveType): number {
+  if (type === "capacity_push") {
+    return Math.round(snapshot.guests + clamp(snapshot.guests * 0.1, 140, 700));
+  }
+
   if (type !== "guest_growth") {
     return 0;
   }
+
   return Math.round(snapshot.guests + clamp(snapshot.guests * 0.18, 220, 1_200));
 }
 
@@ -280,10 +349,31 @@ function calculateProfitTarget(snapshot: PlayerSnapshot, type: PlayerObjectiveTy
 }
 
 function calculateRideTarget(snapshot: PlayerSnapshot, type: PlayerObjectiveType): number {
+  if (type === "coaster_brief") {
+    return snapshot.openRideCount + 1;
+  }
+
   if (type !== "ride_expansion") {
     return 0;
   }
+
   return snapshot.openRideCount + (snapshot.openRideCount < 8 ? 2 : 1);
+}
+
+function calculateTotalRideTarget(snapshot: PlayerSnapshot, type: PlayerObjectiveType): number {
+  if (type !== "capacity_push") {
+    return 0;
+  }
+
+  return snapshot.totalRideCount + (snapshot.totalRideCount < 12 ? 3 : 2);
+}
+
+function calculateExcitementTarget(snapshot: PlayerSnapshot, type: PlayerObjectiveType): number {
+  if (type !== "coaster_brief") {
+    return 0;
+  }
+
+  return roundTo(clamp(Math.max(snapshot.averageRideExcitement + 0.35, 6.2), 5.8, 8.5), 1);
 }
 
 function getObjectiveTitle(type: PlayerObjectiveType): string {
@@ -296,6 +386,10 @@ function getObjectiveTitle(type: PlayerObjectiveType): string {
       return "Profit Target";
     case "ride_expansion":
       return "Expansion Brief";
+    case "coaster_brief":
+      return "Coaster Brief";
+    case "capacity_push":
+      return "Capacity Push";
   }
 }
 
@@ -309,6 +403,27 @@ function getObjectiveSummary(type: PlayerObjectiveType): string {
       return "Prove the park can convert demand into real operating profit.";
     case "ride_expansion":
       return "Add enough open attractions to keep the park from feeling stale.";
+    case "coaster_brief":
+      return "Add or improve headline rides so the average excitement target is met.";
+    case "capacity_push":
+      return "Build enough capacity and convert it into real guest growth before the deadline.";
+  }
+}
+
+function getObjectiveActionHint(type: PlayerObjectiveType): string {
+  switch (type) {
+    case "guest_growth":
+      return "bring in more guests before the deadline.";
+    case "rating_hold":
+      return "clean paths, fix complaints and keep the park rating high.";
+    case "profit_push":
+      return "raise monthly operating profit through ride, shop and cost changes.";
+    case "ride_expansion":
+      return "build and open enough new attractions.";
+    case "coaster_brief":
+      return "add or improve exciting headline rides, then keep them open.";
+    case "capacity_push":
+      return "add ride capacity and convert it into guest growth.";
   }
 }
 

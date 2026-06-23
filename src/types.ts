@@ -36,7 +36,10 @@ export type PlayerLeagueActionType =
   | "pr_blitz"
   | "guest_festival"
   | "safety_campaign"
-  | "efficiency_push";
+  | "efficiency_push"
+  | "rival_counter_pr"
+  | "local_discount_push"
+  | "build_focus";
 
 export type EquityBuyerType =
   | "institutional"
@@ -74,7 +77,23 @@ export type PlayerObjectiveType =
   | "guest_growth"
   | "rating_hold"
   | "profit_push"
-  | "ride_expansion";
+  | "ride_expansion"
+  | "coaster_brief"
+  | "capacity_push";
+
+export type ParkExperienceEventType =
+  | "press_day"
+  | "school_trip"
+  | "influencer_event"
+  | "regional_fan_weekend"
+  | "vip_critic";
+
+export type PlayerRelevantGuestRole =
+  | "critic"
+  | "press"
+  | "influencer"
+  | "school_lead"
+  | "fan_lead";
 
 export interface SimulationConfig {
   difficultyPreset: DifficultyPreset;
@@ -401,10 +420,14 @@ export interface PlayerObjective {
   baselineRating: number;
   baselineProfit: number;
   baselineOpenRideCount: number;
+  baselineTotalRideCount: number;
+  baselineAverageRideExcitement: number;
   targetGuests: number;
   targetRating: number;
   targetProfit: number;
   targetOpenRideCount: number;
+  targetTotalRideCount: number;
+  targetAverageRideExcitement: number;
   rewardCash: number;
   penaltyCash: number;
 }
@@ -422,6 +445,42 @@ export interface PlayerUiState {
   lastPopupNewsId: string | null;
   lastPopupDayIndex: number;
   popupCooldownDays: number;
+}
+
+export interface PlayerExperienceEvent {
+  id: string;
+  type: ParkExperienceEventType;
+  title: string;
+  summary: string;
+  startedAtDayIndex: number;
+  daysRemaining: number;
+  guestCapBonus: number;
+  scoreBonus: number;
+  momentumBonus: number;
+  visualIntensity: number;
+  guestWaveSize: number;
+  reviewerName: string | null;
+  reviewerGuestId: number | null;
+}
+
+export interface PlayerRelevantGuest {
+  id: string;
+  guestId: number | null;
+  name: string;
+  role: PlayerRelevantGuestRole;
+  eventId: string;
+  eventTitle: string;
+  arrivedAtDayIndex: number;
+}
+
+export interface PlayerExperienceState {
+  activeEvent: PlayerExperienceEvent | null;
+  lastEventSummary: string | null;
+  lastPresentedEventId: string | null;
+  recentEventSummaries: string[];
+  relevantGuests: PlayerRelevantGuest[];
+  completedReviews: number;
+  positiveReviews: number;
 }
 
 export interface PlayerPrestigeAchievement {
@@ -497,6 +556,7 @@ export interface PlayerLeagueState {
   rivalry: PlayerRivalChallengeState;
   objectives: PlayerObjectiveState;
   ui: PlayerUiState;
+  experience: PlayerExperienceState;
   prestige: PlayerPrestigeState;
 }
 

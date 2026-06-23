@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createInitialStateAtDay } from "../src/domain/simulation";
-import { advancePlayerObjective } from "../src/domain/objectives";
+import {
+  advancePlayerObjective,
+  buildActiveObjectiveDetailRows,
+  getActiveObjectiveSummary,
+} from "../src/domain/objectives";
 import type { PlayerObjective, PlayerSnapshot } from "../src/types";
 
 function createSnapshot(overrides: Partial<PlayerSnapshot> = {}): PlayerSnapshot {
@@ -40,10 +44,14 @@ function createObjective(overrides: Partial<PlayerObjective> = {}): PlayerObject
     baselineRating: 800,
     baselineProfit: 8_000,
     baselineOpenRideCount: 5,
+    baselineTotalRideCount: 6,
+    baselineAverageRideExcitement: 5.5,
     targetGuests: 1_200,
     targetRating: 0,
     targetProfit: 0,
     targetOpenRideCount: 0,
+    targetTotalRideCount: 0,
+    targetAverageRideExcitement: 0,
     rewardCash: 5_000,
     penaltyCash: 7_000,
     ...overrides,
@@ -81,5 +89,41 @@ describe("player objectives", () => {
     expect(state.player.objectives.activeObjective).toBeNull();
     expect(state.player.objectives.failedObjectives).toBe(1);
     expect(state.player.governance.boardPatience).toBeLessThan(beforeBoardPatience);
+  });
+
+  it("supports construction-focused coaster objectives", () => {
+    const state = createInitialStateAtDay(0, 0, "Goal Park");
+    state.player.objectives.activeObjective = createObjective({
+      type: "coaster_brief",
+      title: "Coaster Brief",
+      targetGuests: 0,
+      targetOpenRideCount: 8,
+      targetAverageRideExcitement: 6.2,
+    });
+
+    const result = advancePlayerObjective(
+      state,
+      createSnapshot({ openRideCount: 8, averageRideExcitement: 6.4 }),
+      7
+    );
+
+    expect(result.cashDelta).toBe(5_000);
+    expect(state.player.objectives.completedObjectives).toBe(1);
+  });
+
+  it("builds visible task details with progress, deadline, reward and no claim button", () => {
+    const state = createInitialStateAtDay(0, 0, "Goal Park");
+    state.player.objectives.activeObjective = createObjective({
+      resolveAtDayIndex: 14,
+    });
+
+    const snapshot = createSnapshot({ currentDayIndex: 8, guests: 1_125 });
+    const rows = buildActiveObjectiveDetailRows(state, snapshot);
+
+    expect(getActiveObjectiveSummary(state, snapshot.currentDayIndex)).toContain("6d");
+    expect(rows).toContain("Active task: Crowd Target");
+    expect(rows).toContain("Progress: 1125/1200 guests");
+    expect(rows).toContain("Reward: $5,000 | Risk: $7,000");
+    expect(rows.join(" ")).toMatch(/No claim button/i);
   });
 });

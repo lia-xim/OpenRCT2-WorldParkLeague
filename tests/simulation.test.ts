@@ -297,6 +297,7 @@ describe("simulateMonth", () => {
     expect(
       result.headlines.some((headline) => headline.headline.includes("World Spotlight"))
     ).toBe(true);
+    expect(result.nextState.player.experience.activeEvent?.title).toBeTruthy();
   });
 
   it("assigns supporting random boosts to a top chaser and a mid-table park", () => {

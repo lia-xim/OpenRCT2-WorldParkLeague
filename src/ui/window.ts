@@ -12,7 +12,13 @@ import {
   readPlayerSnapshot,
 } from "../domain/player";
 import { getActionDefinition, getPlayerActionSummary } from "../domain/playerActions";
-import { getDifficultyLabel, DIFFICULTY_PRESET_ORDER } from "../domain/difficulty";
+import {
+  getDifficultyLabel,
+  getDifficultyRecommendationLine,
+  recommendDifficultyPreset,
+  DIFFICULTY_PRESET_ORDER,
+} from "../domain/difficulty";
+import { getActiveExperienceSummary } from "../domain/experience";
 import { buildObjectiveTimelineRows, getActiveObjectiveSummary } from "../domain/objectives";
 import {
   buildPrestigeMilestones,
@@ -65,7 +71,15 @@ import {
   WINDOW_CLASSIFICATION,
 } from "../config";
 import { openCapitalDeskWindow, refreshCapitalDeskWindow } from "./capitalDesk";
-import { openPrestigeWindow, refreshPrestigeWindow } from "./prestigeWindow";
+import { openCheatWindow } from "./cheatWindow";
+import { openHelpWindow } from "./helpWindow";
+import {
+  maybeOpenObjectiveWindowForActiveTask,
+  openObjectiveWindow,
+  refreshObjectiveWindow,
+} from "./objectiveWindow";
+import { refreshPrestigeWindow } from "./prestigeWindow";
+import { openRelevantGuestsWindow, refreshRelevantGuestsWindow } from "./relevantGuestsWindow";
 import { openWatchlistWindow, refreshWatchlistWindow } from "./watchlistWindow";
 import {
   drawStatCard,
@@ -233,13 +247,13 @@ export function openMainWindow(): void {
             drawStatCard(this, g, playerSummaryCard);
           },
         },
-        { type: "groupbox", x: 488, y: 18, width: 484, height: 104, text: "World Snapshot" },
+        { type: "groupbox", x: 488, y: 18, width: 484, height: 104, text: "League" },
         {
           type: "custom",
           name: "league-card",
           x: 498,
           y: 34,
-          width: 360,
+          width: 296,
           height: 78,
           onDraw(g) {
             drawStatCard(this, g, leagueSummaryCard);
@@ -248,9 +262,9 @@ export function openMainWindow(): void {
         {
           type: "button",
           name: "capital-desk",
-          x: 868,
+          x: 806,
           y: 34,
-          width: 94,
+          width: 76,
           height: 18,
           text: "Money",
           onClick: () => {
@@ -260,9 +274,9 @@ export function openMainWindow(): void {
         {
           type: "button",
           name: "watchlist-window",
-          x: 868,
-          y: 58,
-          width: 94,
+          x: 888,
+          y: 34,
+          width: 74,
           height: 18,
           text: "Rivals",
           onClick: () => {
@@ -271,18 +285,54 @@ export function openMainWindow(): void {
         },
         {
           type: "button",
-          name: "prestige-window",
-          x: 868,
-          y: 82,
-          width: 94,
+          name: "objective-window",
+          x: 806,
+          y: 58,
+          width: 76,
           height: 18,
-          text: "Goals",
+          text: "Tasks",
           onClick: () => {
-            runWindowAction("prestige-window.click", () => openPrestigeWindow());
+            runWindowAction("objective-window.click", () => openObjectiveWindow());
+          },
+        },
+        {
+          type: "button",
+          name: "cheat-window",
+          x: 888,
+          y: 58,
+          width: 74,
+          height: 18,
+          text: "Cheats",
+          onClick: () => {
+            runWindowAction("cheat-window.click", () => openCheatWindow());
+          },
+        },
+        {
+          type: "button",
+          name: "relevant-guests-window",
+          x: 806,
+          y: 82,
+          width: 76,
+          height: 18,
+          text: "People",
+          onClick: () => {
+            runWindowAction("relevant-guests-window.click", () => openRelevantGuestsWindow());
+          },
+        },
+        {
+          type: "button",
+          name: "help-window",
+          x: 888,
+          y: 82,
+          width: 74,
+          height: 18,
+          text: "Help",
+          onClick: () => {
+            runWindowAction("help-window.click", () => openHelpWindow());
           },
         },
 
-        { type: "groupbox", x: 8, y: 128, width: 564, height: 390, text: "Park Rankings" },
+        { type: "groupbox", x: 8, y: 128, width: 564, height: 390, text: "Rankings" },
         { type: "label", x: 18, y: 146, width: 34, height: 14, text: "Sort:" },
         {
           type: "dropdown",
@@ -385,7 +435,7 @@ export function openMainWindow(): void {
             { header: "People", width: 56 },
             { header: "Profit", width: 76 },
             { header: "Value", width: 76 },
-      { header: "Reserve", width: 76 },
+            { header: "Reserve", width: 76 },
             { header: "Status", width: 62 },
           ],
           items: [],
@@ -403,7 +453,7 @@ export function openMainWindow(): void {
           },
         },
 
-        { type: "groupbox", x: 580, y: 128, width: 392, height: 182, text: "Park Snapshot" },
+        { type: "groupbox", x: 580, y: 128, width: 392, height: 182, text: "Selected Park" },
         {
           type: "custom",
           name: "selected-panel",
@@ -579,7 +629,7 @@ export function openMainWindow(): void {
           },
         },
 
-        { type: "groupbox", x: 8, y: 554, width: 564, height: 156, text: "League Portfolio" },
+        { type: "groupbox", x: 8, y: 554, width: 564, height: 156, text: "Holdings" },
         {
           type: "listview",
           name: "portfolio-list",
@@ -614,7 +664,7 @@ export function openMainWindow(): void {
           },
         },
 
-        { type: "groupbox", x: 580, y: 554, width: 392, height: 156, text: "League Headlines" },
+        { type: "groupbox", x: 580, y: 554, width: 392, height: 156, text: "News" },
         {
           type: "listview",
           name: "news-list",
@@ -674,10 +724,15 @@ function updateWindowContents(state: WorldParkLeagueState, snapshot: PlayerSnaps
     renderNews(window, state);
     updateTradeButtons(window, state, selectedRival);
     maybeShowIntroWindow(state, snapshot);
+    if (!ui.getWindow(INTRO_WINDOW_CLASSIFICATION)) {
+      maybeOpenObjectiveWindowForActiveTask(state, snapshot);
+    }
     maybeShowLeagueAlert(state, snapshot);
     refreshCapitalDeskWindow();
     refreshWatchlistWindow();
     refreshPrestigeWindow();
+    refreshObjectiveWindow();
+    refreshRelevantGuestsWindow();
   } catch (error) {
     console.log(`[${PLUGIN_NAME}] updateWindowContents failed: ${String(error)}`);
   }
@@ -741,7 +796,7 @@ function maybeShowIntroWindow(state: WorldParkLeagueState, snapshot: PlayerSnaps
       { type: "label", x: 20, y: 38, width: 420, height: 14, text: "1. Build your park normally. The league follows real save data." },
       { type: "label", x: 20, y: 56, width: 420, height: 14, text: "2. Watch Rank, Park cash, Profit and your active Goal first." },
       { type: "label", x: 20, y: 74, width: 420, height: 14, text: "3. Difficulty changes how often rivals attack and goals punish mistakes." },
-      { type: "label", x: 20, y: 92, width: 420, height: 14, text: "4. Money, Rivals and Goals open the deeper management screens." },
+      { type: "label", x: 20, y: 92, width: 420, height: 14, text: "4. Tasks shows the active assignment; Money and Rivals hold actions." },
       { type: "label", x: 20, y: 112, width: 420, height: 14, text: "Tip: If a popup appears, it is a real pressure event worth reacting to." },
       {
         type: "button",
@@ -832,7 +887,7 @@ function renderSummary(
       : activeBoostSummary;
 
   if (uiComplexityMode === "simple") {
-    const objectiveLine = getActiveObjectiveSummary(state);
+    const objectiveLine = getActiveObjectiveSummary(state, snapshot.currentDayIndex);
     playerSummaryCard = {
       rows: [
         {
@@ -863,6 +918,10 @@ function renderSummary(
         {
           left: { label: "Mode", value: getDifficultyLabel(state.config.difficultyPreset) },
           right: { label: "Risk", value: trimText(nowFocus.tag, 20) },
+        },
+        {
+          left: { label: "Suggest", value: getDifficultyLabel(recommendDifficultyPreset(state, snapshot)) },
+          right: { label: "Help", value: "Open" },
         },
       ],
     };
@@ -992,8 +1051,7 @@ function renderTrendPanel(
   comparisonEntry: LeaderboardEntry | null
 ): void {
   timelinePanelModel = {
-    caption: "Challenge timeline",
-    rows: buildObjectiveTimelineRows(state, snapshot),
+    rows: buildCompactTimelineRows(state, snapshot),
     emptyText: "No active tasks.",
   };
   const playerEntry = state.world.leaderboard.find((entry) => entry.isPlayer) ?? null;
@@ -1098,6 +1156,15 @@ function renderTrendPanel(
       state
     ),
   };
+}
+
+function buildCompactTimelineRows(
+  state: WorldParkLeagueState,
+  snapshot: PlayerSnapshot
+): string[] {
+  return buildObjectiveTimelineRows(state, snapshot).map((row, index) =>
+    index === 0 ? `Timeline: ${row}` : row
+  ).concat(`Park event: ${trimText(getActiveExperienceSummary(state), 58)}`).slice(0, 4);
 }
 
 function syncControlState(window: Window, state: WorldParkLeagueState): void {
@@ -1626,14 +1693,15 @@ function buildPlayerDetailLines(
     const challengeOrGoal =
       state.player.rivalry.activeChallenge
         ? `Challenge: ${trimText(challengeLine, 82)}`
-        : `Goal: ${trimText(getActiveObjectiveSummary(state), 82)}`;
+        : `Task: ${trimText(getActiveObjectiveSummary(state, snapshot.currentDayIndex), 82)}`;
     return [
       `Rank ${state.player.currentRank ?? "-"} of ${state.world.leaderboard.length}${comparisonEntry ? ` | Next: ${trimText(comparisonEntry.parkName, 22)}` : ""}`,
       `Cash ${formatMoney(snapshot.cash)} | Profit ${formatSignedMoney(snapshot.lastMonthOperatingProfit)} | Guests ${snapshot.guests.toLocaleString("en-US")}`,
       challengeOrGoal,
+      `Park event: ${trimText(getActiveExperienceSummary(state), 78)}`,
       `Why: ${trimText(explanationLine, 82)}`,
+      `Difficulty: ${trimText(getDifficultyRecommendationLine(state, snapshot), 78)}`,
       `Score driver: ${trimText(buildWeakScoreDriverSummary(playerBreakdown), 78)}`,
-      `Rivalry: ${trimText(formatHeadToHeadLine(rivalrySummary), 82)}`,
     ];
   }
 
@@ -1644,6 +1712,7 @@ function buildPlayerDetailLines(
     `Park cash: ${formatMoney(snapshot.cash)}   League worth: ${formatMoney(calculateOwnerNetWorth(state, snapshot))}   Loan: ${formatMoney(snapshot.bankLoan)}`,
     `Park equity value: ${formatMoney(playerEquityValue)}   Open rides: ${snapshot.openRideCount}/${snapshot.totalRideCount}`,
     `League flow: ${trimText(state.player.owner.lastCashFlowSummary ?? "No recent league cashflow.", 72)}`,
+    `Park event: ${trimText(getActiveExperienceSummary(state), 104)}`,
     `Why: ${trimText(explanationLine, 106)}`,
     `Milestones: ${trimText(milestoneLine, 58)}   Drivers: ${trimText(scoreDrivers, 34)}`,
     `Rivalry: ${trimText(formatHeadToHeadLine(rivalrySummary), 106)}`,

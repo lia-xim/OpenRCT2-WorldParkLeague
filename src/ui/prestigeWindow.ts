@@ -20,7 +20,7 @@ import { drawStatCard, drawTextPanel, type StatCardModel, type TextPanelModel } 
 import type { PlayerSnapshot, WorldParkLeagueState } from "../types";
 
 const PRESTIGE_WINDOW_CLASSIFICATION = "world-park-league.prestige";
-const PRESTIGE_WINDOW_TITLE = `${PLUGIN_NAME} | Prestige`;
+const PRESTIGE_WINDOW_TITLE = `${PLUGIN_NAME} | Goals`;
 
 let selectedAchievementKey: string | null = null;
 let selectedGoalKey: string | null = null;
@@ -56,7 +56,7 @@ export function openPrestigeWindow(): void {
       selectedGoalKey = null;
     },
     widgets: [
-      { type: "groupbox", x: 8, y: 18, width: 604, height: 104, text: "Prestige Overview" },
+      { type: "groupbox", x: 8, y: 18, width: 604, height: 104, text: "Goal Snapshot" },
       {
         type: "custom",
         name: "prestige-card",
@@ -69,7 +69,7 @@ export function openPrestigeWindow(): void {
         },
       },
 
-      { type: "groupbox", x: 8, y: 128, width: 604, height: 188, text: "Unlocked Achievements" },
+      { type: "groupbox", x: 8, y: 128, width: 604, height: 188, text: "Completed" },
       {
         type: "listview",
         name: "achievement-list",
@@ -100,7 +100,7 @@ export function openPrestigeWindow(): void {
       },
       { type: "label", name: "achievement-detail", x: 18, y: 256, width: 584, height: 50, text: "" },
 
-      { type: "groupbox", x: 8, y: 322, width: 604, height: 158, text: "Active Goals" },
+      { type: "groupbox", x: 8, y: 322, width: 604, height: 158, text: "Next Goals" },
       {
         type: "listview",
         name: "goal-list",
@@ -132,7 +132,7 @@ export function openPrestigeWindow(): void {
       },
       { type: "label", name: "goal-detail", x: 18, y: 434, width: 584, height: 36, text: "" },
 
-      { type: "groupbox", x: 8, y: 486, width: 290, height: 170, text: "Lifetime Records" },
+      { type: "groupbox", x: 8, y: 486, width: 290, height: 170, text: "Records" },
       {
         type: "custom",
         name: "records-panel",
@@ -145,7 +145,7 @@ export function openPrestigeWindow(): void {
         },
       },
 
-      { type: "groupbox", x: 306, y: 486, width: 306, height: 170, text: "Rival Story" },
+      { type: "groupbox", x: 306, y: 486, width: 306, height: 170, text: "Story" },
       {
         type: "custom",
         name: "rivalry-panel",
@@ -241,10 +241,6 @@ function updatePrestigeContents(state: WorldParkLeagueState, snapshot: PlayerSna
         right: { label: "Peak share", value: `${(records.peakPeopleShare * 100).toFixed(1)}%` },
       },
       {
-        left: { label: "Peak equity", value: formatCompactMoney(records.peakEquityValue) },
-        right: { label: "Peak profit", value: formatCompactMoney(records.peakMonthlyProfit) },
-      },
-      {
         left: { label: "Next unlock", value: trimText(nextGoal?.title ?? "All cleared", 20) },
         right: {
           label: "Next reward",
@@ -253,7 +249,7 @@ function updatePrestigeContents(state: WorldParkLeagueState, snapshot: PlayerSna
       },
       {
         left: { label: "Active rewards", value: getPrestigeRewardSummary(state) },
-        right: { label: "Latest reward", value: trimText(state.player.prestige.lastRewardSummary ?? "None", 22) },
+        right: { label: "Peak profit", value: formatCompactMoney(records.peakMonthlyProfit) },
       },
     ],
   };

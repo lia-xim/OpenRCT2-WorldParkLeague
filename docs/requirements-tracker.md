@@ -49,6 +49,10 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Tieferes Balancing gegen Snowballing mit Leader-Pressure, staerkerem Rivalen-Catch-up und Balance-Harness
 - [x] Mehr direkte OpenRCT2-Rueckkopplung ueber Nachrichten, Awards und UI-Hinweise
 - [x] Aktive Zielaufgaben mit Deadline, Reward, Park-Cash-Strafe und Board-/Investor-Folgen
+- [x] Echte Bauziele fuer Coaster-Qualitaet und Kapazitaetsausbau statt nur abstrakter Finanz-/Score-Ziele
+- [x] Park-sichtbare Experience-Events mit echten Gastwellen und visuellen Triggern
+- [x] VIP-/Kritikerbesuche als benannte echte Gaeste mit Review-Auswertung auf Basis echter Parkdaten
+- [x] Relevante Event-Personen im `People`-Fenster sichtbar machen und im Park lokalisieren koennen
 - [x] Bestehende starke Savegames werden bei neuer/migrierter League-State-Erstellung einmalig gegen ein staerkeres Rivalenfeld kalibriert
 
 ## Governance und Board
@@ -100,6 +104,7 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Verlorene Head-to-head-Challenges kosten echte Parkkasse statt nur eine verpasste Belohnung zu sein
 - [x] Sichtbare Warn-Popups fuer Rivalenangriffe, Zielverfehlungen, Investment-Schocks und harte Negativevents
 - [x] Popup-Pacing mit persistiertem Cooldown, damit wichtige Warnungen sichtbar bleiben ohne zu spammen
+- [x] Spieler-Gegenmassnahmen gegen Rivalendruck ueber `Counter Campaign`, `Local Push` und `Build Focus`
 
 ## UI und Bedienung
 
@@ -151,6 +156,10 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] `Challenge timeline` im Hauptfenster fuer aktive Ziele, Rivalen-Duelle und aktuelle Risiken
 - [x] `Capital / Portfolio`-Bereich fuer Park-Cash, Portfolio, Cashflows und Management-Aktionen
 - [x] Klare Erklaerung im UI, dass Rivalen-Trades, Dividenden, Exits, Challenges und Prestige-Cash die Parkkasse betreffen
+- [x] Eigenes `Help`-Fenster als robuste Tooltip-Alternative fuer Score, People Share, Park Cash, Ziele, Challenges und Counterplay
+- [x] Save-aware Difficulty-Empfehlung direkt im UI sichtbar gemacht
+- [x] Money-/Rivals-/Goals-Fenster weiter vereinfacht und fuer neue Nutzer klarer benannt
+- [x] Aktives Park-Experience-Event in Timeline und Selected-Park-Details sichtbar gemacht
 
 ## Technische und Architektur-Anforderungen
 
@@ -176,6 +185,8 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Numerische Guards gegen nicht-finite Score- und Leaderboard-Zustaende
 - [x] Explizite Anti-Dominanz-Hebel fuer Catch-up-Druck und lokale Rivalitaet in den Balance-Suchraum aufgenommen
 - [x] Schema-24-Migration fuer Difficulty/Objectives und einmalige Rivalen-Kalibrierung
+- [x] Schema-26-Migration fuer neue League Actions und Bauziel-Felder
+- [x] Schema-27-Migration fuer Park-Experience-Events und VIP-Review-State
 - [-] Tieferes Ingame-Testing und Balancing gegen echte Spielverlaeufe
 
 ## Aktueller Fokus
@@ -207,18 +218,25 @@ Diese Datei ist die lebende Checkliste fuer das Projekt. Sie soll bei jeder rele
 - [x] Difficulty Presets, aktive Zielaufgaben, negative Investment-Events, Rivalen-Warn-Popups und Challenge-Timeline eingezogen
 - [x] Haupt-UI fuer neue Nutzer deutlich vereinfacht und tiefere Daten in Advanced-/Detailfenster verschoben
 - [x] First-Run-Onboarding, Popup-Pacing, bessere Score-Erklaerung und Difficulty-Preset-QA eingezogen
+- [x] UI-Reduktion mit `Help`-Fenster, klareren Subfenstern, Counter-Actions und save-aware Difficulty-Hinweis eingezogen
+- [x] Objective-System um Coaster- und Kapazitaets-Bauziele erweitert
+- [x] `Outstanding Experience Card` angelegt und ersten Park-Experience-Layer mit Pressetag, Schulausflug, Influencer-Event, Fan-Weekend und VIP-Kritiker umgesetzt
 
 ## Naechste Umsetzungsschritte
 
 1. Angewendetes Balance-Profil gegen echte Saves pruefen und bei Bedarf weiter verfeinern
 2. Difficulty Presets ueber echte kleine, mittlere und dominante Saves feinjustieren und mit `analyze:balance:difficulty` gegenpruefen
-3. Zielaufgaben-Haeufigkeit, Rewards und Strafen auf Spielspass statt nur Zahlenwert pruefen
-4. Challenge-Penalties, Pressure-Campaigns und Investment-Schocks ueber echte Spielsituationen pruefen
-5. Watchlist/Alerts/Popups ueber echte Savegames auf Signal-zu-Rauschen und Alert-Haeufigkeit feinjustieren
-6. Capital-/Portfolio-UI weiter ausbauen, vor allem Cashflow-Historie und Risikoerklaerung
-7. Vereinfachten Rivalen-Aktienmarkt fuer Kauf-/Verkaufsentscheidungen weiter vertiefen
-8. Erst danach pruefen, ob Margin Buying als kontrollierte Erweiterung genug Mehrwert bringt
-9. Short Selling nur als spaete optionale Erweiterung behandeln, nicht als naechsten Kernschritt
-10. Weitere Diagnoseansichten fuer Score-, Markt- und Event-Ursachen ausbauen
-11. GitHub-Release mit Screenshots, Beschreibung und Paket-Artefakten veroeffentlichen
-12. Anforderungen und Tracker nach jeder Feature-Welle aktualisieren
+3. Neue Bauziele, Counter-Actions, Rewards und Strafen in echten Spielsituationen auf Spielspass statt nur Zahlenwert pruefen
+4. Challenge-Penalties, Pressure-Campaigns, Counterplay und Investment-Schocks ueber echte Spielsituationen pruefen
+5. Watchlist/Alerts/Popups/Help-Texte ueber echte Savegames auf Signal-zu-Rauschen und Verstaendlichkeit feinjustieren
+6. Park-Experience-Events ueber echte Saves auf Hauefigkeit, Gastmenge, visuelle Vertraeglichkeit und Nervfaktor pruefen
+7. VIP/Kritiker-UI vertiefen: Zwischenfeedback, Review-Dialog, bessere Hinweise aus echten Guest Thoughts
+8. Saisonale Expo / Trade Fair als jaehrliches GameDev-Tycoon-artiges Grossereignis planen und implementieren
+9. Rivalenangriffe als faire Parkevents mit klarer Gegenmassnahme vertiefen, bevor echte Sabotage oder Bau-Sperren aktiv werden
+10. Capital-/Portfolio-UI weiter ausbauen, vor allem Cashflow-Historie und Risikoerklaerung
+11. Vereinfachten Rivalen-Aktienmarkt fuer Kauf-/Verkaufsentscheidungen weiter vertiefen
+12. Erst danach pruefen, ob Margin Buying als kontrollierte Erweiterung genug Mehrwert bringt
+13. Short Selling nur als spaete optionale Erweiterung behandeln, nicht als naechsten Kernschritt
+14. Weitere Diagnoseansichten fuer Score-, Markt- und Event-Ursachen ausbauen
+15. GitHub-Release mit Screenshots, Beschreibung und Paket-Artefakten veroeffentlichen
+16. Anforderungen und Tracker nach jeder Feature-Welle aktualisieren
